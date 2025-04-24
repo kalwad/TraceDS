@@ -1,0 +1,507 @@
+/*────────────────────────────────────────
+  Import Tron-style font
+────────────────────────────────────────*/
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+/*────────────────────────────────────────
+  CSS Variables & Dark-mode overrides
+────────────────────────────────────────*/
+:root {
+  /* page & text */
+  --bg-main:           #f9f9f9;
+  --bg-gradient:       linear-gradient(to right,#f9f9f9,#e3f2fd);
+  --text-main:         #333;
+
+  /* glass panel */
+  --panel-bg:          rgba(255,255,255,0.8);
+  --panel-shadow:      rgba(0,0,0,0.08);
+
+  /* visualiser block */
+  --card-bg:           #fafafa;
+  --card-border:       #e0e0e0;
+
+  /* array / list cells + tree nodes */
+  --cell-bg:           #e3f2fd;
+  --cell-border:       #90caf9;
+  --cell-text:         #333;
+
+  /* accent buttons */
+  --primary:           #1976d2;
+  --primary-hover:     #1565c0;
+
+  /* title neon/light */
+  --title-color-light: #1976d2;
+  --title-glow-light:  rgba(25,118,210,0.3);
+
+  /* title neon/dark */
+  --title-color-dark:  #00e5ff;
+  --title-glow-dark:   rgba(0,229,255,0.6);
+}
+
+body.dark {
+  --bg-main:           #121212;
+  --bg-gradient:       linear-gradient(to right,#1e1e1e,#121212);
+  --text-main:         #ececec;
+
+  --panel-bg:          rgba(38,38,38,0.9);
+  --panel-shadow:      rgba(0,0,0,0.5);
+
+  --card-bg:           #1f1f1f;
+  --card-border:       #444;
+
+  --cell-bg:           #1a237e;
+  --cell-border:       #3949ab;
+  --cell-text:         #ececec;
+
+  --primary:           #64b5f6;
+  --primary-hover:     #42a5f5;
+}
+
+/*────────────────────────────────────────
+  Base Reset
+────────────────────────────────────────*/
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/*────────────────────────────────────────
+  Header (branding + dark toggle)
+────────────────────────────────────────*/
+.app-header {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 5;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.3rem;
+  color: var(--title-color-light);
+  text-shadow:
+    0 0 2px var(--title-glow-light),
+    0 0 4px var(--title-glow-light);
+  user-select: none;
+}
+
+body.dark .app-header h1 {
+  color: var(--title-color-dark);
+  text-shadow:
+    0 0 3px var(--title-glow-dark),
+    0 0 6px var(--title-glow-dark);
+}
+
+.dark-toggle {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 20px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
+.dark-toggle:hover {
+  background: var(--primary-hover);
+}
+
+/*────────────────────────────────────────
+  App Layout
+────────────────────────────────────────*/
+.app-container {
+  display: flex;
+  height: 100vh;
+  padding: 60px 20px 20px; /* space for header */
+  gap: 20px;
+  box-sizing: border-box;
+}
+.editor-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.visualizer-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--panel-shadow);
+  padding: 16px;
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+/*────────────────────────────────────────
+  Template Dropdown
+────────────────────────────────────────*/
+.template-selector {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.template-selector label {
+  margin-right: 8px;
+}
+.template-selector select {
+  padding: 4px 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+}
+
+/*────────────────────────────────────────
+  Controls (play / pause etc.)
+────────────────────────────────────────*/
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+button {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary);
+  color: white;
+  transition: background-color 0.2s ease;
+}
+button:hover {
+  background: var(--primary-hover);
+}
+
+/*────────────────────────────────────────
+  Monaco Editor Container
+────────────────────────────────────────*/
+.editor-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.editor-container {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  box-sizing: border-box;
+  font-family: 'Courier New', monospace;
+}
+.monaco-editor .margin {
+  min-width: 60px !important;
+  padding-left: 8px !important;
+  box-sizing: border-box !important;
+}
+.monaco-editor .line-numbers {
+  font-family: 'Courier New', monospace !important;
+}
+.run-button {
+  margin-top: 12px;
+  align-self: flex-start;
+  background: #43a047;
+}
+.run-button:hover {
+  background: #388e3c;
+}
+
+/*────────────────────────────────────────
+  Legacy textarea styles (unused)
+────────────────────────────────────────*/
+.editor-area,
+.code-editor,
+.line-numbers,
+.line-number {
+  display: none;
+}
+
+/*────────────────────────────────────────
+  Primitive Variable Block
+────────────────────────────────────────*/
+.primitive-block {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+/*────────────────────────────────────────
+  Data Structure Container
+────────────────────────────────────────*/
+.multi-structure-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  flex-wrap: wrap;
+}
+
+/*────────────────────────────────────────
+  Array Visualizer
+────────────────────────────────────────*/
+.array-block {
+  margin-top: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.array-block > h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #1976d2;
+}
+.array-container {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  align-items: center;
+}
+.array-cell {
+  padding: 6px;
+  width: 40px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--cell-bg);
+  border: 1px solid var(--cell-border);
+  text-align: center;
+  font-weight: bold;
+  box-sizing: border-box;
+  color: var(--cell-text) !important;
+}
+
+/*────────────────────────────────────────
+  Linked List Visualizer
+────────────────────────────────────────*/
+.list-block {
+  margin-top: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.list-block > h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #1976d2;
+}
+.linked-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+.linked-cell {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--cell-bg);
+  border: 1px solid var(--cell-border);
+  font-family: 'Courier New', monospace;
+  color: var(--cell-text) !important;
+}
+.linked-arrow {
+  font-size: 16px;
+  color: #1976d2;
+}
+
+/*────────────────────────────────────────
+  FORCE DARK-MODE OVERRIDE
+────────────────────────────────────────*/
+body.dark .array-cell,
+body.dark .linked-cell {
+  background: var(--cell-bg) !important;
+  border-color: var(--cell-border) !important;
+  color: var(--cell-text) !important;
+}
+
+/*────────────────────────────────────────
+  Tree Visualizer
+────────────────────────────────────────*/
+.tree-block {
+  margin-top: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tree-block > h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #1976d2;
+}
+.tree-node {
+  position: relative;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tree-value {
+  position: relative;
+  padding: 8px;
+  border-radius: 50%;
+  background: var(--cell-bg);
+  border: 2px solid var(--cell-border);
+  min-width: 32px;
+  text-align: center;
+  font-weight: bold;
+  z-index: 1;
+}
+.tree-value::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 2px;
+  height: 10px;
+  background: var(--cell-border);
+  transform: translateX(-50%);
+}
+.tree-node:not(:has(.tree-children)) > .tree-value::after {
+  content: none;
+}
+.tree-children {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  justify-content: center;
+  column-gap: 24px;
+  position: relative;
+  margin-top: 8px;
+}
+.tree-children::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 25px;
+  width: calc(100% - 50px);
+  height: 2px;
+  background: var(--cell-border);
+}
+.tree-children .tree-value::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: var(--cell-border);
+  transform: translateX(-50%);
+}
+
+/*────────────────────────────────────────
+  New Node “Box”
+────────────────────────────────────────*/
+.new-node-container {
+  flex: none;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 2px dashed var(--card-border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  max-width: 280px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  animation: slideInFade 0.3s ease forwards;
+}
+@keyframes slideInFade {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/*────────────────────────────────────────
+  HashMap Visualizer
+────────────────────────────────────────*/
+.hashmap-block {
+  margin-top: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.hashmap-block > h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #1976d2;
+  border-bottom: 1px solid var(--cell-border);
+}
+.hashmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(80px,1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+.hashmap-cell {
+  padding: 6px;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid var(--cell-border);
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s, border-color 0.2s;
+  box-sizing: border-box;
+}
+body.dark .hashmap-cell {
+  background: #2c2c2c;
+}
+.hashmap-cell:hover {
+  background: var(--cell-bg);
+  border-color: var(--cell-border);
+}
+.hashmap-key {
+  font-weight: 600;
+  color: #1565c0;
+  font-size: 12px;
+  margin-bottom: 2px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+body.dark .hashmap-key {
+  color: #90caf9;
+}
+.hashmap-val {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--text-main);
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+/*────────────────────────────────────────
+  Monaco inline decorations
+────────────────────────────────────────*/
+.exec-line-highlight {
+  background: #fff59d4d;
+}
+.exec-glyph {
+  border-left: 4px solid #fdd835;
+}
+.error-line-highlight {
+  background: #ffebee;
+  border-left: 4px solid #d32f2f;
+}
+.error-glyph {
+  border-left: 4px solid #d32f2f;
+}
