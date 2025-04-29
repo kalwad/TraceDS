@@ -1,98 +1,109 @@
-import React, { useRef, useLayoutEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useLayoutEffect, useState, useEffect, memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 
-function Node({ node, highlightIds, coords, setCoords }) {
+/*────────────────────────────────────────
+  Node component
+────────────────────────────────────────*/
+const Node = memo(function Node({ node, highlightIds, setCoords }) {
   const ref = useRef(null);
 
+  /* record centre-point */
   useLayoutEffect(() => {
     if (!ref.current) return;
-    const { x, y, width, height } = ref.current.getBoundingClientRect();
-    setCoords(c => ({
-      ...c,
-      [node.id]: { x: x + width / 2, y: y + height / 2 }
-    }));
+    const id = requestAnimationFrame(() => {
+      const { x, y, width, height } = ref.current.getBoundingClientRect();
+      setCoords((c) => ({ ...c, [node.id]: { x: x + width / 2, y: y + height / 2 } }));
+    });
+    return () => cancelAnimationFrame(id);
   }, [node, setCoords]);
+
+  /* colour logic — only override when RB-tree needs tint */
+  const background =
+    node.color === 'R'
+      ? '#ef5350'           /* red */
+      : node.color === 'B'
+      ? '#1e88e5'           /* “black” ≈ blue for contrast */
+      : 'var(--cell-bg)';   /* ← use theme variable instead of hard-coded light blue */
 
   return (
     <motion.div ref={ref} className="tree-node" layout>
       <motion.div
         className="tree-value"
+        style={{ background }}
         animate={
           highlightIds.includes(node.id)
-            ? { scale: [1.2, 1], transition: { duration: 0.3 } }
+            ? { scale: [1.25, 1], transition: { duration: 0.3 } }
             : {}
         }
       >
         {node.val}
       </motion.div>
+
       {(node.left || node.right) && (
         <div className="tree-children">
           {node.left && (
-            <Node
-              node={node.left}
-              highlightIds={highlightIds}
-              coords={coords}
-              setCoords={setCoords}
-            />
+            <Node node={node.left} highlightIds={highlightIds} setCoords={setCoords} />
           )}
           {node.right && (
-            <Node
-              node={node.right}
-              highlightIds={highlightIds}
-              coords={coords}
-              setCoords={setCoords}
-            />
+            <Node node={node.right} highlightIds={highlightIds} setCoords={setCoords} />
           )}
         </div>
       )}
     </motion.div>
   );
-}
+});
 
+/*────────────────────────────────────────
+  Visualiser wrapper
+────────────────────────────────────────*/
 export default function TreeVisualizer({ name, tree, highlightIds = [] }) {
   const [coords, setCoords] = useState({});
+  const [lines, setLines] = useState([]);
 
-  // Collect parent→child lines
-  const collectLines = node => {
-    if (!node || !coords[node.id]) return [];
-    const out = [];
-    ['left', 'right'].forEach(dir => {
-      const child = node[dir];
-      if (child && coords[child.id]) {
-        out.push({
-          from: coords[node.id],
-          to: coords[child.id]
-        });
-      }
-    });
-    out.push(...collectLines(node.left), ...collectLines(node.right));
-    return out;
-  };
+  useEffect(() => {
+    if (!tree || !Object.keys(coords).length) return;
 
-  const svgLines = collectLines(tree);
+    const collect = (n) =>
+      !n || !coords[n.id]
+        ? []
+        : [
+            ...['left', 'right'].flatMap((d) => {
+              const c = n[d];
+              return c && coords[c.id] ? [{ from: coords[n.id], to: coords[c.id] }] : [];
+            }),
+            ...collect(n.left),
+            ...collect(n.right),
+          ];
+
+    const id = requestAnimationFrame(() => setLines(collect(tree)));
+    return () => cancelAnimationFrame(id);
+  }, [coords, tree]);
 
   return (
     <div className="tree-block" style={{ position: 'relative', overflow: 'visible' }}>
       <h4>Tree “{name}”</h4>
 
-      <svg
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-      >
-        {svgLines.map((ln, i) => (
-          <line
-            key={i}
-            x1={ln.from.x}
-            y1={ln.from.y}
-            x2={ln.to.x}
-            y2={ln.to.y}
-            stroke="#90caf9"
-            strokeWidth="2"
-          />
-        ))}
+      {/* connectors */}
+      <svg className="tree-lines-overlay">
+        <AnimatePresence>
+          {lines.map((ln, i) => (
+            <motion.line
+              key={i}
+              x1={ln.from.x} y1={ln.from.y}
+              x2={ln.to.x}   y2={ln.to.y}
+              stroke="#90caf9" strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+            />
+          ))}
+        </AnimatePresence>
       </svg>
 
-      <Node node={tree} highlightIds={highlightIds} coords={coords} setCoords={setCoords} />
+      {tree && <Node node={tree} highlightIds={highlightIds} setCoords={setCoords} />}
     </div>
   );
 }

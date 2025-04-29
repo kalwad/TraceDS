@@ -505,3 +505,25 @@ body.dark .hashmap-key {
 .error-glyph {
   border-left: 4px solid #d32f2f;
 }
+
+/*────────────────────────────────────────
+  Tree Lines Overlay  (NEW)
+────────────────────────────────────────*/
+.tree-lines-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;          /* let lines extend outside */
+  pointer-events: none;       /* keep clicks on underlying nodes */
+}
+
+/* readable red RB nodes on dark */
+body.dark .tree-value[style*="#ef5350"] { color:#fff; }
+
+/* SVG overlay for tree connectors */
+.tree-lines-overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  overflow:visible; pointer-events:none;
+}
