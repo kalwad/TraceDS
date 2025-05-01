@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -10,7 +6,7 @@ import CodeEditor from './CodeEditor';
 import DataStructureVisualizer from './DataStructureVisualizer';
 import './index.css';
 
-// Sorting algorithm templates
+// ─── Sorting algorithm templates ───
 const sortAlgorithms = {
   bubble: `def bubble_sort(arr):
     n = len(arr)
@@ -72,7 +68,7 @@ print(arr)
 `,
 };
 
-// Balanced tree templates
+// ─── Tree templates ───
 const treeTemplates = {
   bst: `class TreeNode:
     def __init__(self, v):
@@ -127,13 +123,13 @@ def insert(node, key):
     node.height = 1 + max(h(node.left), h(node.right))
     balance = bf(node)
 
-    if balance > 1 and key < node.left.val:
+    if balance > 1 and key < node.left.val:            # LL
         return rot_right(node)
-    if balance < -1 and key > node.right.val:
+    if balance < -1 and key > node.right.val:          # RR
         return rot_left(node)
-    if balance > 1 and key > node.left.val:
-        node.left = rot_left(node.left); return rot_right(node)
-    if balance < -1 and key < node.right.val:
+    if balance > 1 and key > node.left.val:            # LR
+        node.left = rot_left(node.left);  return rot_right(node)
+    if balance < -1 and key < node.right.val:          # RL
         node.right = rot_right(node.right); return rot_left(node)
     return node
 
@@ -192,40 +188,43 @@ print("RB tree built")
 };
 
 export default function App() {
-  // ─── state ───
-  const [code, setCode] = useState('');
-  const [frames, setFrames] = useState([]);
-  const [idx, setIdx] = useState(0);
-  const [speed, setSpeed] = useState(1);
-  const [playing, setPlaying] = useState(false);
-  const [errorInfo, setError] = useState(null);
-  const [complexity, setComplexity] = useState('');
-  const [dark, setDark] = useState(false);
+  // ─── pull ?code= from URL once ───
+  const params = new URLSearchParams(window.location.search);
+  const initialCode = params.get('code')
+    ? decodeURIComponent(params.get('code'))
+    : '';
 
+  // ─── editor & trace state ───
+  const [code, setCode]             = useState(initialCode);
+  const [frames, setFrames]         = useState([]);
+  const [idx, setIdx]               = useState(0);
+  const [speed, setSpeed]           = useState(1);
+  const [playing, setPlaying]       = useState(false);
+  const [errorInfo, setError]       = useState(null);
+  const [complexity, setComplexity] = useState('');
+  const [dark, setDark]             = useState(false);
+
+  // ─── UI template state ───
   const [structure, setStructure] = useState('');
   const [algorithm, setAlgorithm] = useState('');
-  const [treeKind, setTreeKind] = useState('bst');
+  const [treeKind, setTreeKind]   = useState('bst');
 
-  const [lastRootTree, setLastRootTree] = useState(null);
+  // ─── fallbacks to hold prior snapshots ───
+  const [lastRootTree, setLastRootTree]     = useState(null);
   const [lastLinkedLists, setLastLinkedLists] = useState({});
-  const [lastArrays, setLastArrays] = useState({});
+  const [lastArrays, setLastArrays]         = useState({});
 
-  // ─── toggle theme ───
+  // ─── toggle dark mode ───
   useEffect(() => {
     document.body.classList.toggle('dark', dark);
   }, [dark]);
 
-  // ─── load code from ?code= on first mount ───
+  // ─── on-mount, if we had initialCode, run it ───
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlCode = params.get('code');
-    if (urlCode) {
-      const decoded = decodeURIComponent(urlCode);
-      setCode(decoded);
-      // automatically run the trace once code is set
-      runTrace(decoded);
+    if (initialCode.trim()) {
+      runTrace(initialCode);
     }
-  }, []);
+  }, [initialCode]);
 
   // ─── template helpers ───
   const loadLinkedTemplate = useCallback(() => {
@@ -257,36 +256,40 @@ print(score)
     setCode(treeTemplates[treeKind]);
   }, [treeKind]);
 
-  // ─── dropdown handler ───
+  // ─── react to dropdown changes ───
   const handleStructureChange = (val) => {
     setStructure(val);
     setAlgorithm('');
     if (val === 'linked_list') loadLinkedTemplate();
     else if (val === 'hashmap') loadHashTemplate();
-    else if (val === 'tree') insertTreeTemplate();
-    else setCode('');
+    else if (val === 'tree')    insertTreeTemplate();
+    else                        setCode('');
   };
 
-  // reload tree template on changes
+  // reload tree template when kind changes
   useEffect(() => {
     if (structure === 'tree') insertTreeTemplate();
   }, [treeKind, structure, insertTreeTemplate]);
 
-  // sort template
+  // array→algorithm template
   useEffect(() => {
     if (structure === 'array' && algorithm) {
       setCode(sortAlgorithms[algorithm]);
     }
   }, [structure, algorithm]);
 
-  // ─── trace function accepts optional override ───
+  // ─── core trace call ───
   const runTrace = useCallback(
     async (overrideCode) => {
       const src = overrideCode !== undefined ? overrideCode : code;
-      setFrames([]); setIdx(0);
+      setFrames([]);
+      setIdx(0);
       setLastRootTree(null);
-      setLastLinkedLists({}); setLastArrays({});
-      setError(null); setComplexity(''); toast.dismiss();
+      setLastLinkedLists({});
+      setLastArrays({});
+      setError(null);
+      setComplexity('');
+      toast.dismiss();
 
       try {
         const { data } = await axios.post(
@@ -299,109 +302,77 @@ print(score)
         const d = err.response?.data || {};
         setError({ line: d.line, msg: d.error || 'Execution error' });
         toast.error(
-          `${d.error || 'Execution error'}${
-            d.line ? ` (line ${d.line})` : ''
-          }`
+          `${d.error || 'Execution error'}${d.line ? ` (line ${d.line})` : ''}`
         );
       }
     },
     [code]
   );
 
-  // ─── playback timer ───
+  // ─── animation timer ───
   useEffect(() => {
     if (!playing) return;
     const t = setInterval(
-      () => setIdx((i) => Math.min(frames.length - 1, i + 1)),
+      () => setIdx(i => Math.min(frames.length - 1, i + 1)),
       1000 / speed
     );
     return () => clearInterval(t);
   }, [playing, speed, frames.length]);
 
-  // ─── snapshot bookkeeping ───
+  // ─── snapshot fallbacks ───
   useEffect(() => {
     if (!frames[idx]) return;
     if (frames[idx].lists) {
-      setLastArrays((prev) => ({
+      setLastArrays(prev => ({
         ...prev,
-        ...JSON.parse(JSON.stringify(frames[idx].lists)),
+        ...JSON.parse(JSON.stringify(frames[idx].lists))
       }));
     }
     if (frames[idx].linked) {
-      setLastLinkedLists((prev) => ({
+      setLastLinkedLists(prev => ({
         ...prev,
-        ...frames[idx].linked,
+        ...frames[idx].linked
       }));
     }
     const root = frames[idx].trees?.root;
     if (root) setLastRootTree(root);
   }, [frames, idx]);
 
-  // ─── render ───
+  // ─── rendering ───
   return (
     <div className="app-container">
       <Toaster position="top-right" gutter={8} />
 
       <header className="app-header">
         <h1>TraceDS</h1>
-        <div
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <button
-            className="dark-toggle"
-            onClick={() => setDark((d) => !d)}
-          >
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button className="dark-toggle" onClick={() => setDark(d => !d)}>
             {dark ? '☀︎ Light' : '🌙 Dark'}
           </button>
-          <span style={{ fontSize: '13px', opacity: 0.6 }}>
-            by Tanish Kalwad
-          </span>
+          <span style={{ fontSize: 13, opacity: 0.6 }}>by Tanish Kalwad</span>
         </div>
       </header>
 
-      {/* ─── editor column ─── */}
       <div className="editor-panel">
         <div className="template-selector">
           <label>Data structure:</label>
-          <select
-            value={structure}
-            onChange={(e) => handleStructureChange(e.target.value)}
-          >
-            <option value="" disabled>
-              Choose one
-            </option>
+          <select value={structure} onChange={e => handleStructureChange(e.target.value)}>
+            <option value="" disabled>Choose one</option>
             <option value="linked_list">Linked List</option>
-            <option value="tree">Tree (BST / AVL / RB)</option>
+            <option value="tree">Tree (BST/AVL/RB)</option>
             <option value="array">Array</option>
             <option value="hashmap">HashMap</option>
           </select>
-
           {structure === 'tree' && (
-            <select
-              style={{ marginLeft: 8 }}
-              value={treeKind}
-              onChange={(e) => setTreeKind(e.target.value)}
-            >
+            <select style={{ marginLeft: 8 }} value={treeKind} onChange={e => setTreeKind(e.target.value)}>
               <option value="bst">BST</option>
-              <option value="avl">AVL Tree</option>
+              <option value="avl">AVL</option>
               <option value="rbt">Red-Black Tree</option>
             </select>
           )}
-
           {structure === 'array' && (
-            <select
-              style={{ marginLeft: 8 }}
-              value={algorithm}
-              onChange={(e) => setAlgorithm(e.target.value)}
-            >
-              <option value="" disabled>
-                Pick sorting algorithm
-              </option>
+            <select style={{ marginLeft: 8 }} value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
+              <option value="" disabled>Pick algorithm</option>
               <option value="bubble">Bubble Sort</option>
               <option value="selection">Selection Sort</option>
               <option value="merge">Merge Sort</option>
@@ -409,7 +380,6 @@ print(score)
             </select>
           )}
         </div>
-
         <CodeEditor
           code={code}
           onChange={setCode}
@@ -420,15 +390,10 @@ print(score)
         />
       </div>
 
-      {/* ─── visualiser column ─── */}
       <div className="visualizer-panel">
         <div className="controls">
-          <button onClick={() => setIdx((i) => Math.max(0, i - 1))}>
-            ◀︎
-          </button>
-          <button onClick={() => setIdx((i) => Math.min(frames.length - 1, i + 1))}>
-            ▶︎
-          </button>
+          <button onClick={() => setIdx(i => Math.max(0, i - 1))}>◀︎</button>
+          <button onClick={() => setIdx(i => Math.min(frames.length - 1, i + 1))}>▶︎</button>
           <label style={{ marginLeft: 12 }}>Speed {speed}×</label>
           <input
             type="range"
@@ -436,9 +401,9 @@ print(score)
             max="5"
             step="0.5"
             value={speed}
-            onChange={(e) => setSpeed(+e.target.value)}
+            onChange={e => setSpeed(+e.target.value)}
           />
-          <button onClick={() => setPlaying((p) => !p)}>
+          <button onClick={() => setPlaying(p => !p)}>
             {playing ? 'Pause' : 'Play'}
           </button>
           {complexity && (
