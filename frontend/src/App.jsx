@@ -318,10 +318,7 @@ print(score)
       <Toaster position="top-right" gutter={8} />
 
       <header className="app-header">
-        <div>
-          <h1>TraceDS</h1>
-          <span style={{ fontSize: '12px', opacity: 0.6, marginLeft: '2px' }}>by Tanish Kalwad</span>
-        </div>
+        <h1>TraceDS</h1>
         <button className="dark-toggle" onClick={() => setDark(d => !d)}>
           {dark ? '☀︎ Light' : '🌙 Dark'}
         </button>
@@ -402,6 +399,16 @@ print(score)
           <p>No frames yet. Click “Run”.</p>
         )}
       </div>
+    <footer style={{
+      marginTop: 'auto',
+      textAlign: 'center',
+      fontSize: '12px',
+      opacity: 0.6,
+      padding: '8px 0',
+      color: 'var(--text-main)'
+    }}>
+      Built by Tanish Kalwad
+    </footer>
     </div>
   );
 }
