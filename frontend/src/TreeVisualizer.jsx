@@ -3,12 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 
 /*────────────────────────────────────────
-  Node component
+  node components
 ────────────────────────────────────────*/
 const Node = memo(function Node({ node, highlightIds, setCoords }) {
   const ref = useRef(null);
 
-  /* record centre-point */
   useLayoutEffect(() => {
     if (!ref.current) return;
     const id = requestAnimationFrame(() => {
@@ -18,13 +17,12 @@ const Node = memo(function Node({ node, highlightIds, setCoords }) {
     return () => cancelAnimationFrame(id);
   }, [node, setCoords]);
 
-  /* colour logic — only override when RB-tree needs tint */
   const background =
     node.color === 'R'
-      ? '#ef5350'           /* red */
+      ? '#ef5350'
       : node.color === 'B'
-      ? '#1e88e5'           /* “black” ≈ blue for contrast */
-      : 'var(--cell-bg)';   /* ← use theme variable instead of hard-coded light blue */
+      ? '#1e88e5'
+      : 'var(--cell-bg)';
 
   return (
     <motion.div ref={ref} className="tree-node" layout>
@@ -55,7 +53,7 @@ const Node = memo(function Node({ node, highlightIds, setCoords }) {
 });
 
 /*────────────────────────────────────────
-  Visualiser wrapper
+  wrapper for visualizer
 ────────────────────────────────────────*/
 export default function TreeVisualizer({ name, tree, highlightIds = [] }) {
   const [coords, setCoords] = useState({});

@@ -5,7 +5,6 @@ import LinkedListVisualizer from './LinkedListVisualizer';
 import TreeVisualizer       from './TreeVisualizer';
 import NewNodeVisualizer    from './NewNodeVisualizer';
 
-/* helpers ------------------------------------------------------------------ */
 function getAllIds(tree, out = []) {
   if (!tree) return out;
   out.push(tree.id);
@@ -17,7 +16,6 @@ function containsId(tree, id) {
   return getAllIds(tree).includes(id);
 }
 
-/* component ---------------------------------------------------------------- */
 export default function DataStructureVisualizer({
   frame,
   prevFrame,
@@ -28,7 +26,6 @@ export default function DataStructureVisualizer({
   const prims    = frame.prims || {};
   const mainTree = frame.trees.root || fallbackTree;
 
-  /* ---------- arrays ---------------------------------------------------- */
   const arrays =
     frame.lists && Object.keys(frame.lists).length
       ? frame.lists
@@ -40,7 +37,6 @@ export default function DataStructureVisualizer({
     if (curr.length > prev.length) arrayHighlights[name] = curr.length - 1;
   }
 
-  /* ---------- linked lists --------------------------------------------- */
   const allLinked = new Set([
     ...Object.keys(fallbackLinked || {}),
     ...Object.keys(frame.linked || {})
@@ -52,7 +48,6 @@ export default function DataStructureVisualizer({
     if (curr.length > prev.length) linkedHighlights[name] = curr.length - 1;
   }
 
-  /* ---------- trees ----------------------------------------------------- */
   let treeHighlightIds = [];
   if (prevFrame && frame.trees.root) {
     const prevIds = getAllIds(prevFrame.trees.root);
@@ -70,7 +65,6 @@ export default function DataStructureVisualizer({
     }
   }
 
-  /* ---------- render ---------------------------------------------------- */
   return (
     <div className="multi-structure-container">
       {/* primitives */}

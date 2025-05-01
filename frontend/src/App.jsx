@@ -10,9 +10,7 @@ import CodeEditor from './CodeEditor';
 import DataStructureVisualizer from './DataStructureVisualizer';
 import './index.css';
 
-/*────────────────────────────────────────
-  Sorting-algorithm templates
-────────────────────────────────────────*/
+// Sorting algorithm templates
 const sortAlgorithms = {
   bubble: `def bubble_sort(arr):
     n = len(arr)
@@ -74,9 +72,7 @@ print(arr)
 `,
 };
 
-/*────────────────────────────────────────
-  Balanced-tree templates
-────────────────────────────────────────*/
+// Balanced tree templates
 const treeTemplates = {
   bst: `class TreeNode:
     def __init__(self, v):
@@ -195,11 +191,9 @@ print("RB tree built")
 `,
 };
 
-/*────────────────────────────────────────
-  Main component
-────────────────────────────────────────*/
+// actual main components
 export default function App() {
-  /* ─ state ─ */
+  // state
   const [code, setCode] = useState('');
   const [frames, setFrames] = useState([]);
   const [idx, setIdx] = useState(0);
@@ -217,12 +211,12 @@ export default function App() {
   const [lastLinkedLists, setLastLinkedLists] = useState({});
   const [lastArrays, setLastArrays] = useState({});
 
-  /* ─ theme toggle ─ */
+  // toggle theme
   useEffect(() => {
     document.body.classList.toggle('dark', dark);
   }, [dark]);
 
-  /* ─ template helpers ─ */
+  // template helpers
   const loadLinkedTemplate = useCallback(() => {
     setCode(`class Node:
     def __init__(self, val):
@@ -252,7 +246,7 @@ print(score)
     setCode(treeTemplates[treeKind]);
   }, [treeKind]);
 
-  /* ─ structure dropdown handler ─ */
+  // dropdown handler
   const handleStructureChange = (val) => {
     setStructure(val);
     setAlgorithm('');
@@ -262,19 +256,19 @@ print(score)
     else                            setCode('');
   };
 
-  /* reload tree template on treeKind change */
+  // reload tree template when it changes
   useEffect(() => {
     if (structure === 'tree') insertTreeTemplate();
   }, [treeKind, structure, insertTreeTemplate]);
 
-  /* array sort template */
+  // array sort template
   useEffect(() => {
     if (structure === 'array' && algorithm) {
       setCode(sortAlgorithms[algorithm]);
     }
   }, [structure, algorithm]);
 
-  /* ─ backend trace ─ */
+  // goto backend trace
   const runTrace = async () => {
     setFrames([]); setIdx(0);
     setLastRootTree(null);
@@ -292,14 +286,14 @@ print(score)
     }
   };
 
-  /* ─ playback timer ─ */
+  // playback
   useEffect(() => {
     if (!playing) return;
     const t = setInterval(() => setIdx(i => Math.min(frames.length - 1, i + 1)), 1000 / speed);
     return () => clearInterval(t);
   }, [playing, speed, frames.length]);
 
-  /* ─ snapshot bookkeeping ─ */
+  // snapshots
   useEffect(() => {
     if (!frames[idx]) return;
     if (frames[idx].lists) {
@@ -312,7 +306,7 @@ print(score)
     if (root) setLastRootTree(root);
   }, [frames, idx]);
 
-  /* ─ render ─ */
+  // render
   return (
     <div className="app-container">
       <Toaster position="top-right" gutter={8} />

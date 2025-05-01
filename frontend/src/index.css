@@ -1,13 +1,8 @@
-/*────────────────────────────────────────
-  Import Tron-style font
-────────────────────────────────────────*/
+
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-/*────────────────────────────────────────
-  CSS Variables & Dark-mode overrides
-────────────────────────────────────────*/
 :root {
-  /* page & text */
+  /* page + text */
   --bg-main:           #f9f9f9;
   --bg-gradient:       linear-gradient(to right,#f9f9f9,#e3f2fd);
   --text-main:         #333;
@@ -57,9 +52,7 @@ body.dark {
   --primary-hover:     #42a5f5;
 }
 
-/*────────────────────────────────────────
-  Base Reset
-────────────────────────────────────────*/
+
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -69,9 +62,7 @@ body {
   box-sizing: border-box;
 }
 
-/*────────────────────────────────────────
-  Header (branding + dark toggle)
-────────────────────────────────────────*/
+
 .app-header {
   position: absolute;
   top: 10px;
@@ -115,12 +106,12 @@ body.dark .app-header h1 {
 }
 
 /*────────────────────────────────────────
-  App Layout
+  app layout
 ────────────────────────────────────────*/
 .app-container {
   display: flex;
   height: 100vh;
-  padding: 60px 20px 20px; /* space for header */
+  padding: 60px 20px 20px;
   gap: 20px;
   box-sizing: border-box;
 }
@@ -142,7 +133,7 @@ body.dark .app-header h1 {
 }
 
 /*────────────────────────────────────────
-  Template Dropdown
+  template dropdown menu
 ────────────────────────────────────────*/
 .template-selector {
   margin-bottom: 10px;
@@ -159,7 +150,7 @@ body.dark .app-header h1 {
 }
 
 /*────────────────────────────────────────
-  Controls (play / pause etc.)
+  controls
 ────────────────────────────────────────*/
 .controls {
   display: flex;
@@ -182,7 +173,7 @@ button:hover {
 }
 
 /*────────────────────────────────────────
-  Monaco Editor Container
+  code eidtor monaco
 ────────────────────────────────────────*/
 .editor-wrapper {
   display: flex;
@@ -216,9 +207,6 @@ button:hover {
   background: #388e3c;
 }
 
-/*────────────────────────────────────────
-  Legacy textarea styles (unused)
-────────────────────────────────────────*/
 .editor-area,
 .code-editor,
 .line-numbers,
@@ -227,7 +215,7 @@ button:hover {
 }
 
 /*────────────────────────────────────────
-  Primitive Variable Block
+  primitive vars
 ────────────────────────────────────────*/
 .primitive-block {
   margin-top: 8px;
@@ -240,7 +228,7 @@ button:hover {
 }
 
 /*────────────────────────────────────────
-  Data Structure Container
+  data structure container
 ────────────────────────────────────────*/
 .multi-structure-container {
   display: flex;
@@ -251,7 +239,7 @@ button:hover {
 }
 
 /*────────────────────────────────────────
-  Array Visualizer
+  array visualizer
 ────────────────────────────────────────*/
 .array-block {
   margin-top: 16px;
@@ -286,7 +274,7 @@ button:hover {
 }
 
 /*────────────────────────────────────────
-  Linked List Visualizer
+  linked lists
 ────────────────────────────────────────*/
 .list-block {
   margin-top: 16px;
@@ -321,7 +309,7 @@ button:hover {
 }
 
 /*────────────────────────────────────────
-  FORCE DARK-MODE OVERRIDE
+  dark mode force overrides
 ────────────────────────────────────────*/
 body.dark .array-cell,
 body.dark .linked-cell {
@@ -331,7 +319,7 @@ body.dark .linked-cell {
 }
 
 /*────────────────────────────────────────
-  Tree Visualizer
+  treeeeesssss
 ────────────────────────────────────────*/
 .tree-block {
   margin-top: 16px;
@@ -410,7 +398,7 @@ body.dark .linked-cell {
 }
 
 /*────────────────────────────────────────
-  New Node “Box”
+  new node box
 ────────────────────────────────────────*/
 .new-node-container {
   flex: none;
@@ -430,7 +418,7 @@ body.dark .linked-cell {
 }
 
 /*────────────────────────────────────────
-  HashMap Visualizer
+  HashMap
 ────────────────────────────────────────*/
 .hashmap-block {
   margin-top: 16px;
@@ -490,7 +478,7 @@ body.dark .hashmap-key {
 }
 
 /*────────────────────────────────────────
-  Monaco inline decorations
+  Monaco decos
 ────────────────────────────────────────*/
 .exec-line-highlight {
   background: #fff59d4d;
@@ -507,7 +495,7 @@ body.dark .hashmap-key {
 }
 
 /*────────────────────────────────────────
-  Tree Lines Overlay  (NEW)
+  tree lines svg
 ────────────────────────────────────────*/
 .tree-lines-overlay {
   position: absolute;
@@ -515,14 +503,12 @@ body.dark .hashmap-key {
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: visible;          /* let lines extend outside */
-  pointer-events: none;       /* keep clicks on underlying nodes */
+  overflow: visible;
+  pointer-events: none;
 }
 
-/* readable red RB nodes on dark */
 body.dark .tree-value[style*="#ef5350"] { color:#fff; }
 
-/* SVG overlay for tree connectors */
 .tree-lines-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
   overflow:visible; pointer-events:none;

@@ -36,6 +36,6 @@ arr = [10, 2, 14, 4, 7]
 print("closest_pair_1d(arr) =", closest_pair_1d(arr))
 """
 
-# Run the tracer and pretty‐print its output
+# run tracer and pretty-print 
 result = trace_code(CODE)
 print(json.dumps(result, indent=2))

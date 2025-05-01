@@ -9,7 +9,7 @@ CORS(app)  # allow requests from frontend
 @app.route("/trace", methods=["GET", "POST"])
 def trace():
     if request.method == "GET":
-        return "OK", 200  # Health check response
+        return "OK", 200  # health check response (for rendering)
 
     code = request.json.get("code", "")
     try:

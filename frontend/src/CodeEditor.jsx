@@ -9,12 +9,12 @@ export default function CodeEditor({ code, onChange, onRun, highlightLine, error
 
   const handleMount = ed => { editorRef.current = ed; };
 
-  /* switch theme on prop change */
+  // switch themes
   useEffect(() => {
     monaco.editor.setTheme(dark ? 'vs-dark' : 'vs-light');
   }, [dark]);
 
-  /* decorations */
+  // decorations
   useEffect(() => {
     if (!editorRef.current) return;
     const ed = editorRef.current;
@@ -52,7 +52,7 @@ export default function CodeEditor({ code, onChange, onRun, highlightLine, error
           value={code}
           onChange={v => onChange(v || '')}
           onMount={handleMount}
-          theme={dark ? 'vs-dark' : 'vs-light'}   /* NEW */
+          theme={dark ? 'vs-dark' : 'vs-light'}  
           options={{
             fontSize: 14,
             fontFamily: 'Courier New, monospace',

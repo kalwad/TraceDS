@@ -1,22 +1,19 @@
 """
 TraceDS – execution tracer + Big-O heuristic
-Fix 30-Apr-2025:
- • Counts global loop depth for non-recursive algorithms (bubble/selection),
-   but still isolates loops inside recursive functions for tree inserts.
+
 """
 
 import ast, copy, inspect
 
-# ──────────────────────────────────────────────
-# 1.  Heuristic Big-O estimator
-# ──────────────────────────────────────────────
+# Heuristic Big-O estimator
+
 class _ComplexityVisitor(ast.NodeVisitor):
     def __init__(self):
-        # global (module-wide) max loop nest
+        # global max loop nest
         self.max_loop_depth_global = 0
         self._stack = []
 
-        # per-function loop depth & recursion flag
+        # per-function loop depth plus recursion flag
         self.func_loop_depth = {}
         self.current_func = None
         self.recursive_funcs = set()
@@ -24,7 +21,7 @@ class _ComplexityVisitor(ast.NodeVisitor):
         # halving flag
         self.halves = False
 
-    # ---------- generic ----------
+    # generic visits
     def generic_visit(self, node):
         is_loop = isinstance(node, (ast.For, ast.While))
 
@@ -50,7 +47,7 @@ class _ComplexityVisitor(ast.NodeVisitor):
         if is_loop:
             self._stack.pop()
 
-    # ---------- function defs ----------
+    # define all funcs
     def visit_FunctionDef(self, node):
         prev = self.current_func
         self.current_func = node.name
@@ -58,7 +55,7 @@ class _ComplexityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)  # traverse body
 
-        # detect self-recursion
+        # detect self recursion
         for n in ast.walk(node):
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == node.name:
                 self.recursive_funcs.add(node.name)
@@ -69,9 +66,8 @@ class _ComplexityVisitor(ast.NodeVisitor):
 
 def estimate_complexity(code: str) -> str:
     """
-    Same heuristic, but:
-      • recursions ⇒ use loops *inside* those functions
-      • else        ⇒ use global loop depth
+    recursions, then use loops inside those functions
+    else, use global loop depth
     """
     try:
         tree = ast.parse(code)
@@ -102,9 +98,7 @@ def estimate_complexity(code: str) -> str:
         return "unknown"
 
 
-# ──────────────────────────────────────────────
-# 2.  Tracer (unchanged)
-# ──────────────────────────────────────────────
+# Tracer
 def trace_code(code_str: str) -> dict:
     frames = []
     current_line = [0]
