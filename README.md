@@ -66,12 +66,13 @@ This project is deployed on [Render](https://render.com):
 
 ---
 
-## License Options
+## License
 
-By default, this project uses the **MIT License**, which allows anyone to:
+This project is released under a **custom non-commercial license**.
 
-- Use, copy, modify, and distribute the software
-- Use it commercially
-- Cannot remove credit to the original author
+- You may view, fork, and use this project for **personal or educational purposes**.
+- You may **not** use this project or its derivatives in **commercial products or services** without permission.
+
+For commercial inquiries, please contact: [kalwadtanish@gmail.com](mailto:kalwadtanish@gmail.com)
 
 ---
