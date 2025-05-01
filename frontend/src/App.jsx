@@ -319,9 +319,12 @@ print(score)
 
       <header className="app-header">
         <h1>TraceDS</h1>
-        <button className="dark-toggle" onClick={() => setDark(d => !d)}>
-          {dark ? '☀︎ Light' : '🌙 Dark'}
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="dark-toggle" onClick={() => setDark(d => !d)}>
+            {dark ? '☀︎ Light' : '🌙 Dark'}
+          </button>
+          <span style={{ fontSize: '13px', opacity: 0.6 }}>by Tanish Kalwad</span>
+        </div>
       </header>
 
       {/* ─── editor column ─── */}
@@ -399,16 +402,6 @@ print(score)
           <p>No frames yet. Click “Run”.</p>
         )}
       </div>
-    <footer style={{
-      marginTop: 'auto',
-      textAlign: 'center',
-      fontSize: '12px',
-      opacity: 0.6,
-      padding: '8px 0',
-      color: 'var(--text-main)'
-    }}>
-      Built by Tanish Kalwad
-    </footer>
     </div>
   );
 }
