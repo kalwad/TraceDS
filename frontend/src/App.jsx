@@ -282,7 +282,7 @@ print(score)
     setError(null); setComplexity(''); toast.dismiss();
 
     try {
-      const { data } = await axios.post('http://127.0.0.1:5000/trace', { code });
+      const { data } = await axios.post('https://traceds-backend.onrender.com/trace', { code });
       setFrames(data.frames || []);
       setComplexity(data.complexity || 'unknown');
     } catch (err) {
