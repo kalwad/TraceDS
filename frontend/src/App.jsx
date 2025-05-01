@@ -127,13 +127,13 @@ def insert(node, key):
     node.height = 1 + max(h(node.left), h(node.right))
     balance = bf(node)
 
-    if balance > 1 and key < node.left.val:            # LL
+    if balance > 1 and key < node.left.val:
         return rot_right(node)
-    if balance < -1 and key > node.right.val:          # RR
+    if balance < -1 and key > node.right.val:
         return rot_left(node)
-    if balance > 1 and key > node.left.val:            # LR
-        node.left = rot_left(node.left);  return rot_right(node)
-    if balance < -1 and key < node.right.val:          # RL
+    if balance > 1 and key > node.left.val:
+        node.left = rot_left(node.left); return rot_right(node)
+    if balance < -1 and key < node.right.val:
         node.right = rot_right(node.right); return rot_left(node)
     return node
 
@@ -191,9 +191,8 @@ print("RB tree built")
 `,
 };
 
-// actual main components
 export default function App() {
-  // state
+  // ─── state ───
   const [code, setCode] = useState('');
   const [frames, setFrames] = useState([]);
   const [idx, setIdx] = useState(0);
@@ -211,12 +210,24 @@ export default function App() {
   const [lastLinkedLists, setLastLinkedLists] = useState({});
   const [lastArrays, setLastArrays] = useState({});
 
-  // toggle theme
+  // ─── toggle theme ───
   useEffect(() => {
     document.body.classList.toggle('dark', dark);
   }, [dark]);
 
-  // template helpers
+  // ─── load code from ?code= on first mount ───
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlCode = params.get('code');
+    if (urlCode) {
+      const decoded = decodeURIComponent(urlCode);
+      setCode(decoded);
+      // automatically run the trace once code is set
+      runTrace(decoded);
+    }
+  }, []);
+
+  // ─── template helpers ───
   const loadLinkedTemplate = useCallback(() => {
     setCode(`class Node:
     def __init__(self, val):
@@ -246,78 +257,110 @@ print(score)
     setCode(treeTemplates[treeKind]);
   }, [treeKind]);
 
-  // dropdown handler
+  // ─── dropdown handler ───
   const handleStructureChange = (val) => {
     setStructure(val);
     setAlgorithm('');
-    if (val === 'linked_list')      loadLinkedTemplate();
-    else if (val === 'hashmap')     loadHashTemplate();
-    else if (val === 'tree')        insertTreeTemplate();
-    else                            setCode('');
+    if (val === 'linked_list') loadLinkedTemplate();
+    else if (val === 'hashmap') loadHashTemplate();
+    else if (val === 'tree') insertTreeTemplate();
+    else setCode('');
   };
 
-  // reload tree template when it changes
+  // reload tree template on changes
   useEffect(() => {
     if (structure === 'tree') insertTreeTemplate();
   }, [treeKind, structure, insertTreeTemplate]);
 
-  // array sort template
+  // sort template
   useEffect(() => {
     if (structure === 'array' && algorithm) {
       setCode(sortAlgorithms[algorithm]);
     }
   }, [structure, algorithm]);
 
-  // goto backend trace
-  const runTrace = async () => {
-    setFrames([]); setIdx(0);
-    setLastRootTree(null);
-    setLastLinkedLists({}); setLastArrays({});
-    setError(null); setComplexity(''); toast.dismiss();
+  // ─── trace function accepts optional override ───
+  const runTrace = useCallback(
+    async (overrideCode) => {
+      const src = overrideCode !== undefined ? overrideCode : code;
+      setFrames([]); setIdx(0);
+      setLastRootTree(null);
+      setLastLinkedLists({}); setLastArrays({});
+      setError(null); setComplexity(''); toast.dismiss();
 
-    try {
-      const { data } = await axios.post('https://traceds-backend.onrender.com/trace', { code });
-      setFrames(data.frames || []);
-      setComplexity(data.complexity || 'unknown');
-    } catch (err) {
-      const d = err.response?.data || {};
-      setError({ line: d.line, msg: d.error || 'Execution error' });
-      toast.error(`${d.error || 'Execution error'}${d.line ? ` (line ${d.line})` : ''}`);
-    }
-  };
+      try {
+        const { data } = await axios.post(
+          'https://traceds-backend.onrender.com/trace',
+          { code: src }
+        );
+        setFrames(data.frames || []);
+        setComplexity(data.complexity || 'unknown');
+      } catch (err) {
+        const d = err.response?.data || {};
+        setError({ line: d.line, msg: d.error || 'Execution error' });
+        toast.error(
+          `${d.error || 'Execution error'}${
+            d.line ? ` (line ${d.line})` : ''
+          }`
+        );
+      }
+    },
+    [code]
+  );
 
-  // playback
+  // ─── playback timer ───
   useEffect(() => {
     if (!playing) return;
-    const t = setInterval(() => setIdx(i => Math.min(frames.length - 1, i + 1)), 1000 / speed);
+    const t = setInterval(
+      () => setIdx((i) => Math.min(frames.length - 1, i + 1)),
+      1000 / speed
+    );
     return () => clearInterval(t);
   }, [playing, speed, frames.length]);
 
-  // snapshots
+  // ─── snapshot bookkeeping ───
   useEffect(() => {
     if (!frames[idx]) return;
     if (frames[idx].lists) {
-      setLastArrays(prev => ({ ...prev, ...JSON.parse(JSON.stringify(frames[idx].lists)) }));
+      setLastArrays((prev) => ({
+        ...prev,
+        ...JSON.parse(JSON.stringify(frames[idx].lists)),
+      }));
     }
     if (frames[idx].linked) {
-      setLastLinkedLists(prev => ({ ...prev, ...frames[idx].linked }));
+      setLastLinkedLists((prev) => ({
+        ...prev,
+        ...frames[idx].linked,
+      }));
     }
     const root = frames[idx].trees?.root;
     if (root) setLastRootTree(root);
   }, [frames, idx]);
 
-  // render
+  // ─── render ───
   return (
     <div className="app-container">
       <Toaster position="top-right" gutter={8} />
 
       <header className="app-header">
         <h1>TraceDS</h1>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button className="dark-toggle" onClick={() => setDark(d => !d)}>
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <button
+            className="dark-toggle"
+            onClick={() => setDark((d) => !d)}
+          >
             {dark ? '☀︎ Light' : '🌙 Dark'}
           </button>
-          <span style={{ fontSize: '13px', opacity: 0.6 }}>by Tanish Kalwad</span>
+          <span style={{ fontSize: '13px', opacity: 0.6 }}>
+            by Tanish Kalwad
+          </span>
         </div>
       </header>
 
@@ -325,8 +368,13 @@ print(score)
       <div className="editor-panel">
         <div className="template-selector">
           <label>Data structure:</label>
-          <select value={structure} onChange={e => handleStructureChange(e.target.value)}>
-            <option value="" disabled>Choose one</option>
+          <select
+            value={structure}
+            onChange={(e) => handleStructureChange(e.target.value)}
+          >
+            <option value="" disabled>
+              Choose one
+            </option>
             <option value="linked_list">Linked List</option>
             <option value="tree">Tree (BST / AVL / RB)</option>
             <option value="array">Array</option>
@@ -334,7 +382,11 @@ print(score)
           </select>
 
           {structure === 'tree' && (
-            <select style={{ marginLeft: 8 }} value={treeKind} onChange={e => setTreeKind(e.target.value)}>
+            <select
+              style={{ marginLeft: 8 }}
+              value={treeKind}
+              onChange={(e) => setTreeKind(e.target.value)}
+            >
               <option value="bst">BST</option>
               <option value="avl">AVL Tree</option>
               <option value="rbt">Red-Black Tree</option>
@@ -342,8 +394,14 @@ print(score)
           )}
 
           {structure === 'array' && (
-            <select style={{ marginLeft: 8 }} value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
-              <option value="" disabled>Pick sorting algorithm</option>
+            <select
+              style={{ marginLeft: 8 }}
+              value={algorithm}
+              onChange={(e) => setAlgorithm(e.target.value)}
+            >
+              <option value="" disabled>
+                Pick sorting algorithm
+              </option>
               <option value="bubble">Bubble Sort</option>
               <option value="selection">Selection Sort</option>
               <option value="merge">Merge Sort</option>
@@ -355,7 +413,7 @@ print(score)
         <CodeEditor
           code={code}
           onChange={setCode}
-          onRun={runTrace}
+          onRun={() => runTrace()}
           highlightLine={frames[idx]?.line_no}
           errorInfo={errorInfo}
           dark={dark}
@@ -365,11 +423,24 @@ print(score)
       {/* ─── visualiser column ─── */}
       <div className="visualizer-panel">
         <div className="controls">
-          <button onClick={() => setIdx(i => Math.max(0, i - 1))}>◀︎</button>
-          <button onClick={() => setIdx(i => Math.min(frames.length - 1, i + 1))}>▶︎</button>
+          <button onClick={() => setIdx((i) => Math.max(0, i - 1))}>
+            ◀︎
+          </button>
+          <button onClick={() => setIdx((i) => Math.min(frames.length - 1, i + 1))}>
+            ▶︎
+          </button>
           <label style={{ marginLeft: 12 }}>Speed {speed}×</label>
-          <input type="range" min="0.5" max="5" step="0.5" value={speed} onChange={e => setSpeed(+e.target.value)} />
-          <button onClick={() => setPlaying(p => !p)}>{playing ? 'Pause' : 'Play'}</button>
+          <input
+            type="range"
+            min="0.5"
+            max="5"
+            step="0.5"
+            value={speed}
+            onChange={(e) => setSpeed(+e.target.value)}
+          />
+          <button onClick={() => setPlaying((p) => !p)}>
+            {playing ? 'Pause' : 'Play'}
+          </button>
           {complexity && (
             <span style={{ marginLeft: 'auto', fontWeight: 600 }}>
               Complexity: {complexity}
