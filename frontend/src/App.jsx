@@ -318,7 +318,10 @@ print(score)
       <Toaster position="top-right" gutter={8} />
 
       <header className="app-header">
-        <h1>TraceDS</h1>
+        <div>
+          <h1>TraceDS</h1>
+          <span style={{ fontSize: '12px', opacity: 0.6, marginLeft: '2px' }}>by Tanish Kalwad</span>
+        </div>
         <button className="dark-toggle" onClick={() => setDark(d => !d)}>
           {dark ? '☀︎ Light' : '🌙 Dark'}
         </button>
