@@ -1,3 +1,4 @@
+// DataStructureVisualizer.jsx — passes pointer list
 import React from 'react';
 import ArrayVisualizer      from './ArrayVisualizer';
 import HashMapVisualizer    from './HashMapVisualizer';
@@ -5,116 +6,85 @@ import LinkedListVisualizer from './LinkedListVisualizer';
 import TreeVisualizer       from './TreeVisualizer';
 import NewNodeVisualizer    from './NewNodeVisualizer';
 
-function getAllIds(tree, out = []) {
-  if (!tree) return out;
-  out.push(tree.id);
-  getAllIds(tree.left,  out);
-  getAllIds(tree.right, out);
-  return out;
-}
-function containsId(tree, id) {
-  return getAllIds(tree).includes(id);
-}
+/* helper funcs unchanged */
+function getAllIds(t,o=[]){ if(!t) return o; o.push(t.id); getAllIds(t.left,o); getAllIds(t.right,o); return o;}
+function containsId(t,id){ return getAllIds(t).includes(id); }
 
 export default function DataStructureVisualizer({
-  frame,
-  prevFrame,
-  fallbackTree,
-  fallbackLinked,
-  fallbackArrays
+  frame, prevFrame, fallbackTree, fallbackLinked, fallbackArrays
 }) {
-  const prims    = frame.prims || {};
+  const prims = frame.prims || {};
+  const arrays = frame.lists && Object.keys(frame.lists).length
+    ? frame.lists : fallbackArrays || {};
+
+  /* detect highlights (unchanged) */
+  const arrayHL = {};
+  for (const [n,curr] of Object.entries(frame.lists||{})) {
+    const prev = prevFrame?.lists?.[n] || [];
+    if (curr.length > prev.length) arrayHL[n] = curr.length-1;
+  }
+
+  const allLinked = new Set([...Object.keys(fallbackLinked||{}), ...Object.keys(frame.linked||{})]);
+  const linkedHL = {};
+  for (const n of allLinked) {
+    const curr = frame.linked?.[n] || fallbackLinked?.[n] || [];
+    const prev = prevFrame?.linked?.[n] || [];
+    if (curr.length > prev.length) linkedHL[n] = curr.length-1;
+  }
+
+  /* tree highlights unchanged … */
+  let treeHighlightIds=[];
+  if (prevFrame && frame.trees.root){
+    const prevIds=getAllIds(prevFrame.trees.root);
+    treeHighlightIds=getAllIds(frame.trees.root).filter(id=>!prevIds.includes(id));
+  }
+
+  const newTrees=[];
   const mainTree = frame.trees.root || fallbackTree;
-
-  const arrays =
-    frame.lists && Object.keys(frame.lists).length
-      ? frame.lists
-      : fallbackArrays || {};
-
-  const arrayHighlights = {};
-  for (const [name, curr] of Object.entries(frame.lists || {})) {
-    const prev = prevFrame?.lists?.[name] || [];
-    if (curr.length > prev.length) arrayHighlights[name] = curr.length - 1;
-  }
-
-  const allLinked = new Set([
-    ...Object.keys(fallbackLinked || {}),
-    ...Object.keys(frame.linked || {})
-  ]);
-  const linkedHighlights = {};
-  for (const name of allLinked) {
-    const curr = frame.linked?.[name] || fallbackLinked?.[name] || [];
-    const prev = prevFrame?.linked?.[name] || [];
-    if (curr.length > prev.length) linkedHighlights[name] = curr.length - 1;
-  }
-
-  let treeHighlightIds = [];
-  if (prevFrame && frame.trees.root) {
-    const prevIds = getAllIds(prevFrame.trees.root);
-    const currIds = getAllIds(frame.trees.root);
-    treeHighlightIds = currIds.filter(id => !prevIds.includes(id));
-  }
-
-  const newTrees = [];
-  if (prevFrame && mainTree) {
-    for (const [name, tree] of Object.entries(frame.trees)) {
-      if (name === 'root' || name === 'self') continue;
-      const existed = !!prevFrame.trees[name];
-      const inRoot  = containsId(mainTree, tree.id);
-      if (!existed && !inRoot) newTrees.push([name, tree]);
+  if (prevFrame && mainTree){
+    for (const [n,t] of Object.entries(frame.trees)){
+      if (n==='root'||n==='self') continue;
+      if (!prevFrame.trees[n] && !containsId(mainTree,t.id)) newTrees.push([n,t]);
     }
   }
 
   return (
     <div className="multi-structure-container">
       {/* primitives */}
-      {Object.entries(prims).map(([k, v]) => (
-        <div key={k} className="primitive-block">
-          <strong>{k}</strong>: {String(v)}
-        </div>
+      {Object.entries(prims).map(([k,v])=>(
+        <div key={k} className="primitive-block"><strong>{k}</strong>: {String(v)}</div>
       ))}
 
-      {/* arrays */}
-      {Object.entries(arrays).map(([name, values]) => (
+      {/* arrays with pointers */}
+      {Object.entries(arrays).map(([n,vals])=>(
         <ArrayVisualizer
-          key={name}
-          frameId={frame.line_no}
-          snapshot={{ [name]: values }}
-          highlightIndex={arrayHighlights[name]}
-          pointers={Object.fromEntries(
-            Object.entries(prims).filter(([_, v]) =>
-              typeof v === 'number' && v >= 0 && v < values.length
-            )
-          )}
+          key={n}
+          snapshot={{[n]:vals}}
+          highlightIndex={arrayHL[n]}
+          pointers={frame.array_indices?.[n] || []}
         />
       ))}
 
       {/* hash maps */}
-      {Object.entries(frame.dicts).map(([name, dict]) => (
-        <HashMapVisualizer key={name} snapshot={{ [name]: dict }} />
+      {Object.entries(frame.dicts).map(([n,d])=>(
+        <HashMapVisualizer key={n} snapshot={{[n]:d}} />
       ))}
 
       {/* linked lists */}
-      {[...allLinked].map(name => (
+      {[...allLinked].map(n=>(
         <LinkedListVisualizer
-          key={name}
-          name={name}
-          values={frame.linked?.[name] || fallbackLinked?.[name] || []}
-          highlightIndex={linkedHighlights[name]}
+          key={n}
+          name={n}
+          values={frame.linked?.[n] || fallbackLinked?.[n] || []}
+          highlightIndex={linkedHL[n]}
         />
       ))}
 
       {/* trees */}
-      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-        {mainTree && (
-          <TreeVisualizer
-            name="root"
-            tree={mainTree}
-            highlightIds={treeHighlightIds}
-          />
-        )}
-        {newTrees.map(([name, tree]) => (
-          <NewNodeVisualizer key={name} name={name} tree={tree} />
+      <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
+        {mainTree && <TreeVisualizer name="root" tree={mainTree} highlightIds={treeHighlightIds} />}
+        {newTrees.map(([n,t])=>(
+          <NewNodeVisualizer key={n} name={n} tree={t}/>
         ))}
       </div>
     </div>
