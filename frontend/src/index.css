@@ -564,3 +564,9 @@ body.dark .array-pointer-label{
 /* allow labels to overflow containers */
 .array-container{overflow:visible!important;}
 .visualizer-panel{overflow:visible!important;}
+
+/* nudge the whole array row downward so pills clear the title */
+.array-container{
+  padding-top:8px;   /* adjust 6‑10 px to taste */
+}
+
