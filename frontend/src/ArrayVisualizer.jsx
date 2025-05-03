@@ -11,7 +11,7 @@ export default function ArrayVisualizer({ snapshot, highlightIndex, pointers = {
       <LayoutGroup>
         <div className="array-container">
           {arr.map((v, i) => (
-            <div key={`${name}-${i}`} className="array-cell-wrapper">
+            <div key={`${name}-${v}-${i}`} className="array-cell-wrapper">
               <div className="pointer-labels">
                 {Object.entries(pointers)
                   .filter(([, index]) => index === i)
