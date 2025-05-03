@@ -1,4 +1,5 @@
-# tracer.py — TraceDS (fully fixed complexity estimator)
+# tracer.py — TraceDS (with array-index pointer tracking)
+
 import ast, copy, inspect
 
 
@@ -32,6 +33,7 @@ class _ComplexityVisitor(ast.NodeVisitor):
             if self.current_func:
                 self.func_loops[self.current_func] = True
 
+        # detect halving / slicing
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.FloorDiv):
             if isinstance(node.right, ast.Constant) and node.right.value in (2,4,8,16):
                 self.halves = True
@@ -41,9 +43,11 @@ class _ComplexityVisitor(ast.NodeVisitor):
         elif isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice):
             self.halves = True
 
+        # comprehensions count as loops
         if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
             self._mark_comp()
 
+        # tree attr usage
         if isinstance(node, ast.Attribute):
             self._mark_tree_attr(node.attr)
 
@@ -61,6 +65,7 @@ class _ComplexityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+        # detect self-recursion
         for n in ast.walk(node):
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == node.name:
                 self.recursive_funcs.add(node.name)
@@ -78,9 +83,7 @@ def estimate_complexity(code: str) -> str:
         v.visit(tree)
 
         if v.recursive_funcs:
-            if v.recursive_with_loops:
-                return "O(n log n)"
-            if any(v.func_has_comp[f] for f in v.recursive_funcs) or v.halves:
+            if v.recursive_with_loops or any(v.func_has_comp[f] for f in v.recursive_funcs):
                 return "O(n log n)"
             if any(v.func_tree_recursion[f] for f in v.recursive_funcs):
                 return "O(log n)"
@@ -95,7 +98,7 @@ def estimate_complexity(code: str) -> str:
         if v.halves:
             return "O(log n)"
         return "O(1)"
-    except Exception:
+    except:
         return "unknown"
 
 
@@ -103,7 +106,8 @@ def trace_code(code_str: str) -> dict:
     frames = []
     current_line = [0]
 
-    def __trace_line__(lineno): current_line[0] = lineno
+    def __trace_line__(lineno):
+        current_line[0] = lineno
 
     def snapshot():
         try:
@@ -111,6 +115,7 @@ def trace_code(code_str: str) -> dict:
             lists_snap, dicts_snap, prims_snap = {}, {}, {}
             linked_snap, tree_snap = {}, {}
 
+            # capture locals
             for name, val in f.f_locals.items():
                 if name.startswith("__"):
                     continue
@@ -129,29 +134,38 @@ def trace_code(code_str: str) -> dict:
                     linked_snap[name] = nodes
                 elif hasattr(val, "left") or hasattr(val, "right"):
                     def ser(n):
-                        if n is None:
-                            return None
+                        if n is None: return None
                         return {
-                            "id": id(n),
-                            "val": getattr(n, "val", None),
-                            "left": ser(getattr(n, "left", None)),
+                            "id":    id(n),
+                            "val":   getattr(n, "val", None),
+                            "left":  ser(getattr(n, "left", None)),
                             "right": ser(getattr(n, "right", None)),
                             "color": getattr(n, "color", None),
-                            "bf": getattr(n, "height", None),
+                            "bf":    getattr(n, "height", None),
                         }
                     tree_snap[name] = ser(val)
 
+            # track any integer locals that index into an array
+            array_indices = {}
+            for var, v in f.f_locals.items():
+                if isinstance(v, int):
+                    for arr_name, arr in lists_snap.items():
+                        if 0 <= v < len(arr):
+                            array_indices.setdefault(arr_name, []).append([var, v])
+
             frames.append({
-                "line_no": current_line[0],
-                "lists":  lists_snap,
-                "dicts":  dicts_snap,
-                "prims":  prims_snap,
-                "linked": linked_snap,
-                "trees":  tree_snap,
+                "line_no":       current_line[0],
+                "lists":         lists_snap,
+                "dicts":         dicts_snap,
+                "prims":         prims_snap,
+                "linked":        linked_snap,
+                "trees":         tree_snap,
+                "array_indices": array_indices,
             })
         except Exception as e:
             print("SNAPSHOT ERROR:", e)
 
+    # inject tracing calls
     tree = ast.parse(code_str)
     class Injector(ast.NodeTransformer):
         def inject(self, stmts):
@@ -166,15 +180,19 @@ def trace_code(code_str: str) -> dict:
                     ])
             return out
         def visit_Module(self, node):
-            self.generic_visit(node); node.body = self.inject(node.body); return node
+            self.generic_visit(node)
+            node.body = self.inject(node.body)
+            return node
         def visit_FunctionDef(self, node):
-            self.generic_visit(node); node.body = self.inject(node.body); return node
+            self.generic_visit(node)
+            node.body = self.inject(node.body)
+            return node
         visit_AsyncFunctionDef = visit_FunctionDef
-        visit_For = visit_FunctionDef
+        visit_For   = visit_FunctionDef
         visit_While = visit_FunctionDef
-        visit_If = visit_FunctionDef
-        visit_With = visit_FunctionDef
-        visit_Try = visit_FunctionDef
+        visit_If    = visit_FunctionDef
+        visit_With  = visit_FunctionDef
+        visit_Try   = visit_FunctionDef
 
     tree = Injector().visit(tree)
     ast.fix_missing_locations(tree)
