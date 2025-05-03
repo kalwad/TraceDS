@@ -515,43 +515,36 @@ body.dark .tree-value[style*="#ef5350"] { color:#fff; }
 }
 
 /*────────────────────────────────────────
-  Array pointer labels (final, single source of truth)
+  Pointer pills – single definitive rule
 ────────────────────────────────────────*/
 .array-cell-wrapper{
   position:relative;
   display:flex;
   flex-direction:column;
   align-items:center;
-  min-height:60px;            /* space for label */
+  min-height:60px; /* space for labels */
 }
-
 .pointer-labels{
   position:absolute;
-  bottom:100%;                /* sit on top border of cell */
+  bottom:100%;     /* sit on top edge of cell */
   left:50%;
   transform:translateX(-50%);
   display:flex;
   gap:4px;
   pointer-events:none;
-  z-index:9999;               /* always in front */
+  z-index:9999;
 }
-
 .array-pointer-label{
   font:600 12px/1 monospace;
   padding:2px 6px;
   border-radius:4px;
-  background:#ffd54f;         /* bright yellow */
+  background:#ffd54f;
   color:#000;
-  box-shadow:0 1px 3px rgba(0,0,0,.35);
+  box-shadow:0 1px 3px rgba(0,0,0,.3);
   white-space:nowrap;
-  opacity:1;                  /* never fade */
 }
-
 body.dark .array-pointer-label{
-  background:#fff176;         /* higher‑contrast yellow */
-  color:#000;
+  background:#fff176; /* brighter for dark theme */
 }
-
-/* allow pointers to overflow horizontally/vertically */
 .array-container{overflow:visible!important;}
 .visualizer-panel{overflow:visible!important;}
