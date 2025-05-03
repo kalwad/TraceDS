@@ -515,59 +515,43 @@ body.dark .tree-value[style*="#ef5350"] { color:#fff; }
 }
 
 /*────────────────────────────────────────
-  Array pointer labels (i, j, etc.)
+  Array pointer labels (final, single source of truth)
 ────────────────────────────────────────*/
-.array-cell-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 60px;            /* reserves room so labels never overlap */
+.array-cell-wrapper{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:60px;            /* space for label */
 }
 
-.pointer-labels {
-  position: absolute;
-  top: -22px;                  /* sits just above cell */
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  pointer-events: none;        /* clicks go through */
-  z-index: 20;
+.pointer-labels{
+  position:absolute;
+  bottom:100%;                /* sit on top border of cell */
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:4px;
+  pointer-events:none;
+  z-index:9999;               /* always in front */
 }
 
-.array-pointer-label {
-  font-family: monospace;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 6px;
-  background: #ffd54f;         /* bright yellow pill */
-  color: #000;
-  border-radius: 4px;
-  line-height: 1;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
-  white-space: nowrap;
+.array-pointer-label{
+  font:600 12px/1 monospace;
+  padding:2px 6px;
+  border-radius:4px;
+  background:#ffd54f;         /* bright yellow */
+  color:#000;
+  box-shadow:0 1px 3px rgba(0,0,0,.35);
+  white-space:nowrap;
+  opacity:1;                  /* never fade */
 }
 
-body.dark .array-pointer-label {
-  background: #ffca28;         /* slightly deeper yellow for dark mode */
-  color: #000;
+body.dark .array-pointer-label{
+  background:#fff176;         /* higher‑contrast yellow */
+  color:#000;
 }
 
-/*— force pointer pills to stay fully opaque during all animations —*/
-.array-pointer-label,
-.pointer-labels {
-  opacity: 1 !important;
-}
-
-/*— lift them above moving cells so they don’t inherit opacity —*/
-.array-pointer-label {
-  z-index: 9999;   /* sits on top of swapping cells */
-}
-
-/*— better contrast for dark mode —*/
-body.dark .array-pointer-label {
-  background: #fff176;   /* bright lemon */
-  color: #000;
-}
-
+/* allow pointers to overflow horizontally/vertically */
+.array-container{overflow:visible!important;}
+.visualizer-panel{overflow:visible!important;}
