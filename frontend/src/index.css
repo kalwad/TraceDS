@@ -514,24 +514,9 @@ body.dark .tree-value[style*="#ef5350"] { color:#fff; }
   overflow:visible; pointer-events:none;
 }
 
-.array-cell-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-.pointer-labels {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 2px;
-  font-size: 11px;
-  font-family: monospace;
-  color: #f50057;
-  font-weight: bold;
-  z-index: 2;
-}
-
+/*────────────────────────────────────────
+  Array pointer labels (i, j, etc.)
+────────────────────────────────────────*/
 .array-pointer-label {
   position: absolute;
   bottom: 100%;
@@ -543,4 +528,28 @@ body.dark .tree-value[style*="#ef5350"] { color:#fff; }
   transform: translateX(-50%);
   white-space: nowrap;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+
+body.dark .array-pointer-label {
+  background: #ffca28;
+  color: #000;
+}
+
+.array-cell-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-height: 50px; /* add this */
+}
+
+.pointer-labels {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #f50057;
+  font-weight: bold;
 }

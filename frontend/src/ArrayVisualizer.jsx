@@ -10,38 +10,42 @@ export default function ArrayVisualizer({ snapshot, highlightIndex, pointers = {
       <h4>Array “{name}”</h4>
       <LayoutGroup>
         <div className="array-container">
-          {arr.map((v, i) => (
-            <div key={i} className="array-cell-wrapper">
-              {/* Pointer labels ABOVE the cell */}
-              <div className="pointer-labels">
-                {Object.entries(pointers)
-                  .filter(([, index]) => index === i)
-                  .map(([label]) => (
-                    <div key={label} className="array-pointer-label">{label}</div>
-                  ))}
-              </div>
+          {arr.map((v, i) => {
+            const pointerLabels = Object.entries(pointers)
+              .filter(([, index]) => index === i)
+              .map(([label]) => (
+                <div key={label} className="array-pointer-label">{label}</div>
+              ));
 
-              {/* The actual animated cell */}
+            return (
               <motion.div
-                className="array-cell"
-                layout
-                transition={{
-                  type: 'spring',
-                  stiffness: 450,
-                  damping: 30,
-                }}
-                initial={highlightIndex === i ? { y: -20, opacity: 0 } : {}}
-                animate={{
-                  y: 0,
-                  opacity: 1,
-                  backgroundColor: highlightIndex === i ? '#ffe082' : '#e3f2fd'
-                }}
-                exit={highlightIndex === i ? { y: -20, opacity: 0 } : undefined}
+                key={`${name}-${v}-${i}`}         // key helps on full rerender
+                layoutId={`${name}-${i}`}         // enables Framer layout swap animation
+                className="array-cell-wrapper"
               >
-                {v}
+                <div className="pointer-labels">
+                  {pointerLabels}
+                </div>
+                <motion.div
+                  className="array-cell"
+                  layout
+                  initial={highlightIndex === i ? { y: -20, opacity: 0 } : {}}
+                  animate={{
+                    y: 0,
+                    opacity: 1,
+                    backgroundColor: highlightIndex === i ? '#ffe082' : '#e3f2fd'
+                  }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 30
+                  }}
+                >
+                  {v}
+                </motion.div>
               </motion.div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </LayoutGroup>
     </div>
