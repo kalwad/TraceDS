@@ -1,85 +1,105 @@
-"""
-TraceDS – execution tracer + Big-O heuristic
-"""
-
+# tracer.py  – TraceDS (suffix‑free complexity version)
 import ast, copy, inspect
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Big-O heuristic visitor
+
+# ───────────────────────────────────────────────────────────
 class _ComplexityVisitor(ast.NodeVisitor):
     def __init__(self):
-        # Track maximum nesting of ANY loops
         self.max_loop_depth_global = 0
         self._stack = []
 
-        # Which functions are recursive?
         self.current_func = None
-        self.recursive_funcs = set()
-
-        # Did we see a halving pattern (n // 2, slicing, etc.)?
+        self.recursive_funcs       = set()
+        self.recursive_with_loops  = set()
+        self.func_loops            = {}
+        self.func_has_comp         = {}
+        self.func_tree_recursion   = {}
         self.halves = False
 
+    # helpers ──────────────────────────────────────────────
+    def _mark_comp(self):
+        if self.current_func:
+            self.func_has_comp[self.current_func] = True
+
+    def _mark_tree_attr(self, attr):
+        if self.current_func and attr in ("left", "right"):
+            self.func_tree_recursion[self.current_func] = True
+
+    # generic visit with loop depth tracking ───────────────
     def generic_visit(self, node):
-        is_loop = isinstance(node, (ast.For, ast.While))
+        is_loop = isinstance(node, (ast.For, ast.While, ast.comprehension))
         if is_loop:
             self._stack.append(node)
             self.max_loop_depth_global = max(self.max_loop_depth_global,
                                              len(self._stack))
-        # detect halving ops
+            if self.current_func:
+                self.func_loops[self.current_func] = True
+
+        # halving / slicing
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.FloorDiv):
             if isinstance(node.right, ast.Constant) and node.right.value in (2,4,8,16):
                 self.halves = True
-        if isinstance(node, ast.AugAssign) and isinstance(node.op, ast.FloorDiv):
+        elif isinstance(node, ast.AugAssign) and isinstance(node.op, ast.FloorDiv):
             if isinstance(node.value, ast.Constant) and node.value.value in (2,4,8,16):
                 self.halves = True
-        if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice):
+        elif isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice):
             self.halves = True
 
-        super().generic_visit(node)
+        # comprehensions
+        if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            self._mark_comp()
 
+        # .left / .right usage
+        if isinstance(node, ast.Attribute):
+            self._mark_tree_attr(node.attr)
+
+        super().generic_visit(node)
         if is_loop:
             self._stack.pop()
 
+    # function entry ───────────────────────────────────────
     def visit_FunctionDef(self, node):
         prev = self.current_func
         self.current_func = node.name
-        # traverse into it
+
+        self.func_loops.setdefault(node.name, False)
+        self.func_has_comp.setdefault(node.name, False)
+        self.func_tree_recursion.setdefault(node.name, False)
+
         self.generic_visit(node)
-        # did it call itself?
-        for c in ast.walk(node):
-            if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)\
-               and c.func.id == node.name:
+
+        # direct self‑recursion
+        for n in ast.walk(node):
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == node.name:
                 self.recursive_funcs.add(node.name)
+                if self.func_loops[node.name]:
+                    self.recursive_with_loops.add(node.name)
                 break
+
         self.current_func = prev
 
+
 def estimate_complexity(code: str) -> str:
-    """
-    If recursion is present:
-      • and we saw ANY loops at all → O(n log n)
-      • otherwise → O(log n)
-    If no recursion:
-      • no loops but halving → O(log n)
-      • no loops and no halving → O(1)
-      • one level of loops → O(n)
-      • k nested loops → O(n^k)
-    """
     try:
         tree = ast.parse(code)
         v = _ComplexityVisitor()
         v.visit(tree)
 
+        # recursion first
         if v.recursive_funcs:
-            # merge/quick sort both hit loops in merge/partition,
-            # so max_loop_depth_global>0 gives O(n log n)
-            if v.max_loop_depth_global > 0:
-                return "O(n log n) rec"
-            else:
-                return "O(log n) rec"
+            if v.recursive_with_loops or any(v.func_has_comp[f] for f in v.recursive_funcs):
+                return "O(n log n)"          # quicksort‑like
+            if any(v.func_tree_recursion[f] for f in v.recursive_funcs):
+                return "O(log n)"            # tree insert/search
+            if v.halves:
+                return "O(log n)"            # binary search
+            return "O(n)"                    # linear recursion
 
-        # no recursion
+        # iterative
         if v.max_loop_depth_global > 1:
             return f"O(n^{v.max_loop_depth_global})"
+        if v.max_loop_depth_global == 1 and v.halves:
+            return "O(n log n)"
         if v.max_loop_depth_global == 1:
             return "O(n)"
         if v.halves:
@@ -88,15 +108,13 @@ def estimate_complexity(code: str) -> str:
     except Exception:
         return "unknown"
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Full tracer
 
+# ───────────────────────────────────────────────────────────
 def trace_code(code_str: str) -> dict:
     frames = []
     current_line = [0]
 
-    def __trace_line__(lineno):
-        current_line[0] = lineno
+    def __trace_line__(lineno): current_line[0] = lineno
 
     def snapshot():
         try:
@@ -111,10 +129,9 @@ def trace_code(code_str: str) -> dict:
                     lists_snap[name] = copy.deepcopy(val)
                 elif isinstance(val, dict):
                     dicts_snap[name] = copy.deepcopy(val)
-                elif isinstance(val, (int,float,str,bool,type(None))):
+                elif isinstance(val, (int, float, str, bool, type(None))):
                     prims_snap[name] = val
                 elif hasattr(val, "next"):
-                    # singly-linked list
                     nodes, seen, node = [], set(), val
                     while node and id(node) not in seen:
                         seen.add(id(node))
@@ -122,7 +139,6 @@ def trace_code(code_str: str) -> dict:
                         node = getattr(node, "next", None)
                     linked_snap[name] = nodes
                 elif hasattr(val, "left") or hasattr(val, "right"):
-                    # binary tree / BST / AVL / RB
                     def ser(n):
                         if n is None:
                             return None
@@ -147,7 +163,7 @@ def trace_code(code_str: str) -> dict:
         except Exception as e:
             print("SNAPSHOT ERROR:", e)
 
-    # inject tracing calls via AST transformer
+    # inject tracing
     tree = ast.parse(code_str)
     class Injector(ast.NodeTransformer):
         def inject(self, stmts):
@@ -156,28 +172,21 @@ def trace_code(code_str: str) -> dict:
                 out.append(stmt)
                 if hasattr(stmt, "lineno"):
                     out.extend([
-                      ast.Expr(ast.Call(ast.Name("__trace_line__", ast.Load()),
-                                        [ast.Constant(stmt.lineno)], [])),
-                      ast.Expr(ast.Call(ast.Name("snapshot", ast.Load()), [], [])),
+                        ast.Expr(ast.Call(ast.Name("__trace_line__", ast.Load()),
+                                          [ast.Constant(stmt.lineno)], [])),
+                        ast.Expr(ast.Call(ast.Name("snapshot", ast.Load()), [], [])),
                     ])
             return out
-
         def visit_Module(self, node):
-            self.generic_visit(node)
-            node.body = self.inject(node.body)
-            return node
-
+            self.generic_visit(node); node.body = self.inject(node.body); return node
         def visit_FunctionDef(self, node):
-            self.generic_visit(node)
-            node.body = self.inject(node.body)
-            return node
-
+            self.generic_visit(node); node.body = self.inject(node.body); return node
         visit_AsyncFunctionDef = visit_FunctionDef
-        visit_For            = visit_FunctionDef
-        visit_While          = visit_FunctionDef
-        visit_If             = visit_FunctionDef
-        visit_With           = visit_FunctionDef
-        visit_Try            = visit_FunctionDef
+        visit_For = visit_FunctionDef
+        visit_While = visit_FunctionDef
+        visit_If = visit_FunctionDef
+        visit_With = visit_FunctionDef
+        visit_Try = visit_FunctionDef
 
     tree = Injector().visit(tree)
     ast.fix_missing_locations(tree)
@@ -185,7 +194,4 @@ def trace_code(code_str: str) -> dict:
     ns = {"__trace_line__": __trace_line__, "snapshot": snapshot}
     exec(compile(tree, "<string>", "exec"), ns, ns)
 
-    return {
-      "frames": frames,
-      "complexity": estimate_complexity(code_str)
-    }
+    return {"frames": frames, "complexity": estimate_complexity(code_str)}

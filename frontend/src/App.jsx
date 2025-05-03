@@ -123,13 +123,13 @@ def insert(node, key):
     node.height = 1 + max(h(node.left), h(node.right))
     balance = bf(node)
 
-    if balance > 1 and key < node.left.val:            # LL
+    if balance > 1 and key < node.left.val:
         return rot_right(node)
-    if balance < -1 and key > node.right.val:          # RR
+    if balance < -1 and key > node.right.val:
         return rot_left(node)
-    if balance > 1 and key > node.left.val:            # LR
-        node.left = rot_left(node.left);  return rot_right(node)
-    if balance < -1 and key < node.right.val:          # RL
+    if balance > 1 and key > node.left.val:
+        node.left = rot_left(node.left); return rot_right(node)
+    if balance < -1 and key < node.right.val:
         node.right = rot_right(node.right); return rot_left(node)
     return node
 
@@ -188,13 +188,11 @@ print("RB tree built")
 };
 
 export default function App() {
-  // ─── pull ?code= from URL once ───
-  const params = new URLSearchParams(window.location.search);
-  const initialCode = params.get('code')
-    ? decodeURIComponent(params.get('code'))
-    : '';
+  // pull initial code from URL
+  const params      = new URLSearchParams(window.location.search);
+  const initialCode = params.get('code') ? decodeURIComponent(params.get('code')) : '';
 
-  // ─── editor & trace state ───
+  // editor & trace state
   const [code, setCode]             = useState(initialCode);
   const [frames, setFrames]         = useState([]);
   const [idx, setIdx]               = useState(0);
@@ -204,29 +202,57 @@ export default function App() {
   const [complexity, setComplexity] = useState('');
   const [dark, setDark]             = useState(false);
 
-  // ─── UI template state ───
+  // UI template state
   const [structure, setStructure] = useState('');
   const [algorithm, setAlgorithm] = useState('');
   const [treeKind, setTreeKind]   = useState('bst');
 
-  // ─── fallbacks to hold prior snapshots ───
-  const [lastRootTree, setLastRootTree]     = useState(null);
+  // fallbacks for snapshots
+  const [lastRootTree, setLastRootTree]       = useState(null);
   const [lastLinkedLists, setLastLinkedLists] = useState({});
-  const [lastArrays, setLastArrays]         = useState({});
+  const [lastArrays, setLastArrays]           = useState({});
 
-  // ─── toggle dark mode ───
+  // toggle dark mode
   useEffect(() => {
     document.body.classList.toggle('dark', dark);
   }, [dark]);
 
-  // ─── on-mount, if we had initialCode, run it ───
+  // core trace call
+  const runTrace = useCallback(
+    async (overrideCode) => {
+      const src = overrideCode !== undefined ? overrideCode : code;
+      setFrames([]); setIdx(0);
+      setLastRootTree(null);
+      setLastLinkedLists({});
+      setLastArrays({});
+      setError(null);
+      setComplexity('');
+      toast.dismiss();
+
+      try {
+        const { data } = await axios.post(
+          'https://traceds-backend.onrender.com/trace',
+          { code: src }
+        );
+        setFrames(data.frames || []);
+        setComplexity(data.complexity || 'unknown');
+      } catch (err) {
+        const d = err.response?.data || {};
+        setError({ line: d.line, msg: d.error || 'Execution error' });
+        toast.error(`${d.error || 'Execution error'}${d.line ? ` (line ${d.line})` : ''}`);
+      }
+    },
+    [code]
+  );
+
+  // run once if we had initial code
   useEffect(() => {
     if (initialCode.trim()) {
       runTrace(initialCode);
     }
-  }, [initialCode]);
+  }, [initialCode, runTrace]);
 
-  // ─── template helpers ───
+  // template helpers
   const loadLinkedTemplate = useCallback(() => {
     setCode(`class Node:
     def __init__(self, val):
@@ -256,14 +282,14 @@ print(score)
     setCode(treeTemplates[treeKind]);
   }, [treeKind]);
 
-  // ─── react to dropdown changes ───
+  // handle dropdown changes
   const handleStructureChange = (val) => {
     setStructure(val);
     setAlgorithm('');
-    if (val === 'linked_list') loadLinkedTemplate();
-    else if (val === 'hashmap') loadHashTemplate();
-    else if (val === 'tree')    insertTreeTemplate();
-    else                        setCode('');
+    if (val === 'linked_list')    loadLinkedTemplate();
+    else if (val === 'hashmap')    loadHashTemplate();
+    else if (val === 'tree')       insertTreeTemplate();
+    else                           setCode('');
   };
 
   // reload tree template when kind changes
@@ -271,55 +297,21 @@ print(score)
     if (structure === 'tree') insertTreeTemplate();
   }, [treeKind, structure, insertTreeTemplate]);
 
-  // array→algorithm template
+  // array→sort template
   useEffect(() => {
     if (structure === 'array' && algorithm) {
       setCode(sortAlgorithms[algorithm]);
     }
   }, [structure, algorithm]);
 
-  // ─── core trace call ───
-  const runTrace = useCallback(
-    async (overrideCode) => {
-      const src = overrideCode !== undefined ? overrideCode : code;
-      setFrames([]);
-      setIdx(0);
-      setLastRootTree(null);
-      setLastLinkedLists({});
-      setLastArrays({});
-      setError(null);
-      setComplexity('');
-      toast.dismiss();
-
-      try {
-        const { data } = await axios.post(
-          'https://traceds-backend.onrender.com/trace',
-          { code: src }
-        );
-        setFrames(data.frames || []);
-        setComplexity(data.complexity || 'unknown');
-      } catch (err) {
-        const d = err.response?.data || {};
-        setError({ line: d.line, msg: d.error || 'Execution error' });
-        toast.error(
-          `${d.error || 'Execution error'}${d.line ? ` (line ${d.line})` : ''}`
-        );
-      }
-    },
-    [code]
-  );
-
-  // ─── animation timer ───
+  // playback timer
   useEffect(() => {
     if (!playing) return;
-    const t = setInterval(
-      () => setIdx(i => Math.min(frames.length - 1, i + 1)),
-      1000 / speed
-    );
+    const t = setInterval(() => setIdx(i => Math.min(frames.length - 1, i + 1)), 1000 / speed);
     return () => clearInterval(t);
   }, [playing, speed, frames.length]);
 
-  // ─── snapshot fallbacks ───
+  // snapshot fallbacks
   useEffect(() => {
     if (!frames[idx]) return;
     if (frames[idx].lists) {
@@ -338,7 +330,6 @@ print(score)
     if (root) setLastRootTree(root);
   }, [frames, idx]);
 
-  // ─── rendering ───
   return (
     <div className="app-container">
       <Toaster position="top-right" gutter={8} />
@@ -372,7 +363,7 @@ print(score)
           )}
           {structure === 'array' && (
             <select style={{ marginLeft: 8 }} value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
-              <option value="" disabled>Pick algorithm</option>
+              <option value="" disabled>Pick sorting algorithm</option>
               <option value="bubble">Bubble Sort</option>
               <option value="selection">Selection Sort</option>
               <option value="merge">Merge Sort</option>
