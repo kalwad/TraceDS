@@ -518,36 +518,56 @@ body.dark .tree-value[style*="#ef5350"] { color:#fff; }
   Array pointer labels (i, j, etc.)
 ────────────────────────────────────────*/
 .array-cell-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  min-height: 60px;
+  min-height: 60px;            /* reserves room so labels never overlap */
 }
 
 .pointer-labels {
   position: absolute;
-  top: -18px;
+  top: -22px;                  /* sits just above cell */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 4px;
-  z-index: 10;
+  pointer-events: none;        /* clicks go through */
+  z-index: 20;
 }
 
-.pointer-labels .pointer {
-  font-size: 12px;
+.array-pointer-label {
   font-family: monospace;
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: 600;
   padding: 2px 6px;
-  background: #ffd54f;
+  background: #ffd54f;         /* bright yellow pill */
   color: #000;
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
   white-space: nowrap;
 }
 
-body.dark .pointer-labels .pointer {
-  background: #ffca28;
+body.dark .array-pointer-label {
+  background: #ffca28;         /* slightly deeper yellow for dark mode */
   color: #000;
 }
+
+/*— force pointer pills to stay fully opaque during all animations —*/
+.array-pointer-label,
+.pointer-labels {
+  opacity: 1 !important;
+}
+
+/*— lift them above moving cells so they don’t inherit opacity —*/
+.array-pointer-label {
+  z-index: 9999;   /* sits on top of swapping cells */
+}
+
+/*— better contrast for dark mode —*/
+body.dark .array-pointer-label {
+  background: #fff176;   /* bright lemon */
+  color: #000;
+}
+
