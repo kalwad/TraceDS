@@ -1,14 +1,14 @@
 import React from 'react';
-import ArrayVisualizer from './ArrayVisualizer';
-import HashMapVisualizer from './HashMapVisualizer';
+import ArrayVisualizer      from './ArrayVisualizer';
+import HashMapVisualizer    from './HashMapVisualizer';
 import LinkedListVisualizer from './LinkedListVisualizer';
-import TreeVisualizer from './TreeVisualizer';
-import NewNodeVisualizer from './NewNodeVisualizer';
+import TreeVisualizer       from './TreeVisualizer';
+import NewNodeVisualizer    from './NewNodeVisualizer';
 
 function getAllIds(tree, out = []) {
   if (!tree) return out;
   out.push(tree.id);
-  getAllIds(tree.left, out);
+  getAllIds(tree.left,  out);
   getAllIds(tree.right, out);
   return out;
 }
@@ -23,7 +23,7 @@ export default function DataStructureVisualizer({
   fallbackLinked,
   fallbackArrays
 }) {
-  const prims = frame.prims || {};
+  const prims    = frame.prims || {};
   const mainTree = frame.trees.root || fallbackTree;
 
   const arrays =
@@ -36,8 +36,6 @@ export default function DataStructureVisualizer({
     const prev = prevFrame?.lists?.[name] || [];
     if (curr.length > prev.length) arrayHighlights[name] = curr.length - 1;
   }
-
-  const arrayPointers = frame.array_indices || {};
 
   const allLinked = new Set([
     ...Object.keys(fallbackLinked || {}),
@@ -62,7 +60,7 @@ export default function DataStructureVisualizer({
     for (const [name, tree] of Object.entries(frame.trees)) {
       if (name === 'root' || name === 'self') continue;
       const existed = !!prevFrame.trees[name];
-      const inRoot = containsId(mainTree, tree.id);
+      const inRoot  = containsId(mainTree, tree.id);
       if (!existed && !inRoot) newTrees.push([name, tree]);
     }
   }
@@ -83,7 +81,11 @@ export default function DataStructureVisualizer({
           frameId={frame.line_no}
           snapshot={{ [name]: values }}
           highlightIndex={arrayHighlights[name]}
-          pointers={arrayPointers[name] || []}
+          pointers={Object.fromEntries(
+            Object.entries(prims).filter(([_, v]) =>
+              typeof v === 'number' && v >= 0 && v < values.length
+            )
+          )}
         />
       ))}
 

@@ -1,50 +1,47 @@
-// ArrayVisualizer.jsx — now shows pointer names under each cell
-import React from 'react'
-import { motion, LayoutGroup } from 'framer-motion'
-import './index.css'
+import React from 'react';
+import { motion, LayoutGroup } from 'framer-motion';
+import './index.css';
 
-export default function ArrayVisualizer({
-  snapshot,
-  highlightIndex,
-  pointers = []    // array of [varName, idx]
-}) {
-  const [[name, arr]] = Object.entries(snapshot)
-
-  // build map: idx → [varNames…]
-  const ptrMap = pointers.reduce((m, [v, i]) => {
-    m[i] = m[i] ? [...m[i], v] : [v]
-    return m
-  }, {})
+export default function ArrayVisualizer({ snapshot, highlightIndex, pointers = {} }) {
+  const [name, arr] = Object.entries(snapshot)[0] || ['arr', []];
 
   return (
     <div className="array-block">
       <h4>Array “{name}”</h4>
       <LayoutGroup>
         <div className="array-container">
-          {arr.map((v, i) => {
-            const labels = ptrMap[i]?.join(', ')
-            return (
+          {arr.map((v, i) => (
+            <div key={`${name}-${i}`} className="array-cell-wrapper">
+              <div className="pointer-labels">
+                {Object.entries(pointers)
+                  .filter(([, index]) => index === i)
+                  .map(([label]) => (
+                    <div key={label} className="pointer">{label}</div>
+                  ))}
+              </div>
               <motion.div
-                key={`${name}-${i}`}
                 className="array-cell"
                 layout
                 initial={highlightIndex === i ? { y: -20, opacity: 0 } : {}}
                 animate={{
                   y: 0,
                   opacity: 1,
-                  backgroundColor:
-                    highlightIndex === i ? '#ffe082' : '#e3f2fd'
+                  backgroundColor: highlightIndex === i ? '#ffe082' : '#e3f2fd'
                 }}
                 exit={highlightIndex === i ? { y: -20, opacity: 0 } : undefined}
-                transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 450,
+                  damping: 30
+                }}
+                whileHover={highlightIndex === i ? { scale: 1.05 } : {}}
               >
-                <div>{v}</div>
-                {labels && <div className="array-pointer">{labels}</div>}
+                {v}
               </motion.div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       </LayoutGroup>
     </div>
-  )
+  );
 }
