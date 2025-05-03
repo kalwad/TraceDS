@@ -1,8 +1,7 @@
-# tracer.py  – TraceDS (suffix‑free complexity version)
+# tracer.py — TraceDS (fully fixed complexity estimator)
 import ast, copy, inspect
 
 
-# ───────────────────────────────────────────────────────────
 class _ComplexityVisitor(ast.NodeVisitor):
     def __init__(self):
         self.max_loop_depth_global = 0
@@ -16,7 +15,6 @@ class _ComplexityVisitor(ast.NodeVisitor):
         self.func_tree_recursion   = {}
         self.halves = False
 
-    # helpers ──────────────────────────────────────────────
     def _mark_comp(self):
         if self.current_func:
             self.func_has_comp[self.current_func] = True
@@ -25,7 +23,6 @@ class _ComplexityVisitor(ast.NodeVisitor):
         if self.current_func and attr in ("left", "right"):
             self.func_tree_recursion[self.current_func] = True
 
-    # generic visit with loop depth tracking ───────────────
     def generic_visit(self, node):
         is_loop = isinstance(node, (ast.For, ast.While, ast.comprehension))
         if is_loop:
@@ -35,7 +32,6 @@ class _ComplexityVisitor(ast.NodeVisitor):
             if self.current_func:
                 self.func_loops[self.current_func] = True
 
-        # halving / slicing
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.FloorDiv):
             if isinstance(node.right, ast.Constant) and node.right.value in (2,4,8,16):
                 self.halves = True
@@ -45,11 +41,9 @@ class _ComplexityVisitor(ast.NodeVisitor):
         elif isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice):
             self.halves = True
 
-        # comprehensions
         if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
             self._mark_comp()
 
-        # .left / .right usage
         if isinstance(node, ast.Attribute):
             self._mark_tree_attr(node.attr)
 
@@ -57,7 +51,6 @@ class _ComplexityVisitor(ast.NodeVisitor):
         if is_loop:
             self._stack.pop()
 
-    # function entry ───────────────────────────────────────
     def visit_FunctionDef(self, node):
         prev = self.current_func
         self.current_func = node.name
@@ -68,7 +61,6 @@ class _ComplexityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-        # direct self‑recursion
         for n in ast.walk(node):
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == node.name:
                 self.recursive_funcs.add(node.name)
@@ -85,17 +77,15 @@ def estimate_complexity(code: str) -> str:
         v = _ComplexityVisitor()
         v.visit(tree)
 
-        # recursion first
         if v.recursive_funcs:
-            if v.recursive_with_loops or any(v.func_has_comp[f] for f in v.recursive_funcs):
-                return "O(n log n)"          # quicksort‑like
+            if v.recursive_with_loops:
+                return "O(n log n)"
+            if any(v.func_has_comp[f] for f in v.recursive_funcs) or v.halves:
+                return "O(n log n)"
             if any(v.func_tree_recursion[f] for f in v.recursive_funcs):
-                return "O(log n)"            # tree insert/search
-            if v.halves:
-                return "O(log n)"            # binary search
-            return "O(n)"                    # linear recursion
+                return "O(log n)"
+            return "O(n)"
 
-        # iterative
         if v.max_loop_depth_global > 1:
             return f"O(n^{v.max_loop_depth_global})"
         if v.max_loop_depth_global == 1 and v.halves:
@@ -109,7 +99,6 @@ def estimate_complexity(code: str) -> str:
         return "unknown"
 
 
-# ───────────────────────────────────────────────────────────
 def trace_code(code_str: str) -> dict:
     frames = []
     current_line = [0]
@@ -163,7 +152,6 @@ def trace_code(code_str: str) -> dict:
         except Exception as e:
             print("SNAPSHOT ERROR:", e)
 
-    # inject tracing
     tree = ast.parse(code_str)
     class Injector(ast.NodeTransformer):
         def inject(self, stmts):
