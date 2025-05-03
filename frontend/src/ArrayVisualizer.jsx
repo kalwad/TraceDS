@@ -11,17 +11,27 @@ export default function ArrayVisualizer({ snapshot, highlightIndex, pointers = {
       <LayoutGroup>
         <div className="array-container">
           {arr.map((v, i) => (
-            <div key={`${name}-${v}-${i}`} className="array-cell-wrapper">
+            <motion.div
+              key={`${name}-${v}`} // animate swaps by using value-based key
+              layout
+              className="array-cell-wrapper"
+              transition={{
+                layout: {
+                  type: 'spring',
+                  stiffness: 450,
+                  damping: 30
+                }
+              }}
+            >
               <div className="pointer-labels">
                 {Object.entries(pointers)
                   .filter(([, index]) => index === i)
                   .map(([label]) => (
-                    <div key={label} className="pointer">{label}</div>
+                    <div key={label} className="array-pointer-label">{label}</div>
                   ))}
               </div>
               <motion.div
                 className="array-cell"
-                layout
                 initial={highlightIndex === i ? { y: -20, opacity: 0 } : {}}
                 animate={{
                   y: 0,
@@ -29,16 +39,11 @@ export default function ArrayVisualizer({ snapshot, highlightIndex, pointers = {
                   backgroundColor: highlightIndex === i ? '#ffe082' : '#e3f2fd'
                 }}
                 exit={highlightIndex === i ? { y: -20, opacity: 0 } : undefined}
-                transition={{
-                  type: 'spring',
-                  stiffness: 450,
-                  damping: 30
-                }}
                 whileHover={highlightIndex === i ? { scale: 1.05 } : {}}
               >
                 {v}
               </motion.div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </LayoutGroup>
