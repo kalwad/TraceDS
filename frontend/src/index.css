@@ -517,39 +517,37 @@ body.dark .tree-value[style*="#ef5350"] { color:#fff; }
 /*────────────────────────────────────────
   Array pointer labels (i, j, etc.)
 ────────────────────────────────────────*/
-.array-pointer-label {
-  position: absolute;
-  bottom: 100%;
-  font-size: 12px;
-  background: #ffd54f;
-  color: #000;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  z-index: 2;
-}
-
-body.dark .array-pointer-label {
-  background: #ffca28;
-  color: #000;
-}
-
 .array-cell-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  min-height: 50px; /* add this */
+  min-height: 60px;
 }
 
 .pointer-labels {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 4px;
-  margin-bottom: 2px;
-  font-size: 11px;
+  z-index: 10;
+}
+
+.pointer-labels .pointer {
+  font-size: 12px;
   font-family: monospace;
-  color: #f50057;
   font-weight: bold;
+  padding: 2px 6px;
+  background: #ffd54f;
+  color: #000;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  white-space: nowrap;
+}
+
+body.dark .pointer-labels .pointer {
+  background: #ffca28;
+  color: #000;
 }
