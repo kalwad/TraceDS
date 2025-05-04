@@ -1,0 +1,27 @@
+name: Static code analysis using mega-linter
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Run MegaLinter
+      - name: Run MegaLinter
+        uses: oxsecurity/megalinter@v6
+        env:
+          # Optional: Use the default configuration for MegaLinter
+          # You can customize this by adding a `.mega-linter.yml` file in the root of your repository
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
