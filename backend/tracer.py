@@ -3,7 +3,7 @@
 import ast, copy, inspect
 
 # ───────────────────────────────────────────────────────────
-#  Light‑weight complexity estimator (same logic you had)
+#  lightweight complexity heuristics
 # ───────────────────────────────────────────────────────────
 class _ComplexityVisitor(ast.NodeVisitor):
     def __init__(self):
@@ -77,7 +77,7 @@ def estimate_complexity(code: str) -> str:
     except: return "unknown"
 
 # ───────────────────────────────────────────────────────────
-#  Dynamic trace with pointer capture
+#  dynamic trace that tracks variables
 # ───────────────────────────────────────────────────────────
 def trace_code(code_str: str) -> dict:
     frames, current_line = [], [0]

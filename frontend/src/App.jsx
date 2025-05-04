@@ -6,7 +6,7 @@ import CodeEditor from './CodeEditor';
 import DataStructureVisualizer from './DataStructureVisualizer';
 import './index.css';
 
-// ─── Sorting algorithm templates ───
+// ─── sorting algorithm templates ───
 const sortAlgorithms = {
   bubble: `def bubble_sort(arr):
     n = len(arr)
@@ -297,7 +297,7 @@ print(score)
     if (structure === 'tree') insertTreeTemplate();
   }, [treeKind, structure, insertTreeTemplate]);
 
-  // array→sort template
+  // array sort template
   useEffect(() => {
     if (structure === 'array' && algorithm) {
       setCode(sortAlgorithms[algorithm]);
