@@ -1,0 +1,27 @@
+name: Static code analysis using super-linter
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  superlinter:
+    name: Super-Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Run Super-Linter
+      - name: Run Super-Linter
+        uses: github/super-linter@v5
+        env:
+          # Optional: Use the default configuration for Super-Linter
+          # You can customize this by adding a `.github/linters` directory in the root of your repository
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
