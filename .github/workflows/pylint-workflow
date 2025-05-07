@@ -1,6 +1,8 @@
 name: Pylint CI
 
-on: [push, pull_request]
+on:
+  push:  # Triggers the workflow on every push, regardless of the branch
+  pull_request:  # Also triggers the workflow on pull requests targeting any branch
 
 jobs:
   lint:
