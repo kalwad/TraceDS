@@ -15,8 +15,8 @@ Routes:
 
 import os
 import traceback
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, jsonify  # Ensure Flask is installed in your environment
+from flask_cors import CORS  # Ensure flask_cors is installed in your environment
 from tracer import trace_code
 
 app = Flask(__name__)
@@ -45,9 +45,12 @@ def trace():
     try:
         result = trace_code(code)
         return jsonify(result)
-    except Exception as e:
+    except ValueError as e:  # Catch specific exceptions if possible
         traceback.print_exc()
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
 
 if __name__ == "__main__":

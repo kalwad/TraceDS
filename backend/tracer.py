@@ -113,7 +113,8 @@ def estimate_complexity(code: str) -> str:
         if visitor.halves:
             return "O(log n)"
         return "O(1)"
-    except Exception:
+    except Exception as e:
+        print(f"Error estimating complexity: {e}")
         return "unknown"
 
 
@@ -159,16 +160,16 @@ def trace_code(code_str: str) -> dict:
                         node = getattr(node, "next", None)
                     linked_snap[name] = nodes
                 elif hasattr(val, "left") or hasattr(val, "right"):
-                    def ser(n):
+                    def serialize_tree(n):
                         if n is None:
                             return None
                         return {
                             "id": id(n),
                             "val": getattr(n, "val", None),
-                            "left": ser(getattr(n, "left", None)),
-                            "right": ser(getattr(n, "right", None))
+                            "left": serialize_tree(getattr(n, "left", None)),
+                            "right": serialize_tree(getattr(n, "right", None))
                         }
-                    tree_snap[name] = ser(val)
+                    tree_snap[name] = serialize_tree(val)
 
             array_indices = {}
             for var, val in f.f_locals.items():
@@ -187,7 +188,7 @@ def trace_code(code_str: str) -> dict:
                 "array_indices": array_indices
             })
         except Exception as e:
-            print("SNAPSHOT ERROR:", e)
+            print(f"Snapshot error: {e}")
 
     tree = ast.parse(code_str)
 
@@ -207,12 +208,14 @@ def trace_code(code_str: str) -> dict:
                     ])
             return out
 
-        def visit_Module(self, node):
+        def visit_module(self, node):
+            """Visits the module and injects tracing logic."""
             self.generic_visit(node)
             node.body = self.inject(node.body)
             return node
 
-        def visit_FunctionDef(self, node):
+        def visit_function_def(self, node):
+            """Visits function definitions and injects tracing logic."""
             self.generic_visit(node)
             node.body = self.inject(node.body)
             return node
