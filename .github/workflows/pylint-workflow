@@ -1,8 +1,13 @@
 name: Pylint CI
 
 on:
-  push:  # Triggers the workflow on every push, regardless of the branch
-  pull_request:  # Also triggers the workflow on pull requests targeting any branch
+  push:
+    branches:
+      - main
+      - feat/*
+  pull_request:
+    branches:
+      - main
 
 jobs:
   lint:
@@ -16,7 +21,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: 3.x  # Specify the Python version you want to use
 
       - name: Install dependencies
         run: |
