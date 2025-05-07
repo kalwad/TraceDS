@@ -1,15 +1,45 @@
+"""
+This module defines a Flask application that provides an API endpoint for tracing Python code execution.
+
+Modules:
+    - flask: Used to create the web application and handle HTTP requests.
+    - flask_cors: Enables Cross-Origin Resource Sharing (CORS) for the application.
+    - tracer: Contains the `trace_code` function to trace the execution of Python code.
+    - traceback: Used to print detailed error information for debugging purposes.
+    - os: Provides a way to access environment variables for configuration.
+
+Routes:
+    - /trace (GET): Health check endpoint.
+    - /trace (POST): Accepts a JSON payload with Python code and returns the execution trace.
+"""
+
+import os
+import traceback
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tracer import trace_code
-import traceback
 
 app = Flask(__name__)
-CORS(app)  # allow requests from frontend
+CORS(app)  # Allow requests from frontend
 
 @app.route("/trace", methods=["GET", "POST"])
 def trace():
+    """
+    Handles the /trace endpoint for tracing Python code execution.
+
+    GET:
+        Returns a health check response.
+
+    POST:
+        Accepts a JSON payload with the key "code" containing Python code.
+        Returns the execution trace as a JSON response or an error message if tracing fails.
+
+    Returns:
+        - (str, int): Health check response for GET requests.
+        - (Response): JSON response containing the trace result or an error message for POST requests.
+    """
     if request.method == "GET":
-        return "OK", 200  # health check response (for rendering)
+        return "OK", 200  # Health check response
 
     code = request.json.get("code", "")
     try:
@@ -20,9 +50,6 @@ def trace():
         return jsonify({"error": str(e)}), 400
 
 
-
-import os
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # default if not set
+    port = int(os.environ.get("PORT", 10000))  # Default port if not set
     app.run(host="0.0.0.0", port=port, debug=True)
