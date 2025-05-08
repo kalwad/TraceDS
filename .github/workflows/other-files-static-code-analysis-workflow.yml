@@ -1,0 +1,49 @@
+name: CI for Multiple File Types
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Set up Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+        npm install
+
+    # Run markdownlint for Markdown files
+    - name: Run markdownlint
+      run: |
+        npx markdownlint "**/*.md"
+
+    # Run YAML Lint for YAML files
+    - name: Run YAML Lint
+      run: |
+        npx yaml-lint "**/*.{yml,yaml}"
+
+    # Run JSONLint for JSON files
+    - name: Run JSONLint
+      run: |
+        npx jsonlint "**/*.json"
+
+    # Run ShellCheck for shell scripts
+    - name: Run ShellCheck
+      run: |
+        shellcheck **/*.sh
