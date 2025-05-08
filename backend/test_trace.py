@@ -1,4 +1,28 @@
 # test_trace.py
+"""
+This script tests the functionality of the `trace_code` function from the `tracer` module
+by tracing the execution of a sample Python code snippet. The code snippet defines a 
+function `closest_pair_1d` that calculates the smallest distance between any two elements 
+in a 1D array using a merge sort-based approach.
+
+Modules:
+    - json: Used for pretty-printing the trace result in JSON format.
+    - tracer: Contains the `trace_code` function to trace the execution of Python code.
+
+Constants:
+    - CODE (str): A multi-line string containing the Python code to be traced. The code 
+      defines the `closest_pair_1d` function and demonstrates its usage with a sample array.
+
+Functions:
+    - closest_pair_1d(arr): A function defined within the `CODE` string that computes the 
+      smallest distance between any two elements in a 1D array using a merge sort-based 
+      approach.
+
+Execution:
+    - The `trace_code` function is invoked with the `CODE` string to trace its execution.
+    - The resulting trace is pretty-printed in JSON format for inspection.
+"""
+
 import json
 from tracer import trace_code
 
@@ -36,6 +60,6 @@ arr = [10, 2, 14, 4, 7]
 print("closest_pair_1d(arr) =", closest_pair_1d(arr))
 """
 
-# run tracer and pretty-print 
+# run tracer and pretty-print
 result = trace_code(CODE)
 print(json.dumps(result, indent=2))
